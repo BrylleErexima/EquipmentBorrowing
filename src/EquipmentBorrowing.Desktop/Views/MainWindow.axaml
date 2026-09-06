@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="EquipmentBorrowing.Desktop.Views.MainWindow"
+        Title="Campus Equipment Borrowing System"
+        Width="900" Height="600">
+
+	<DockPanel>
+		<TextBlock DockPanel.Dock="Top" Text="Campus Equipment Borrowing System"
+				   FontSize="20" FontWeight="Bold" Margin="16"/>
+
+		<StackPanel DockPanel.Dock="Left" Width="180" Margin="8" Spacing="8">
+			<Button Content="Equipment"/>
+			<Button Content="Active Borrowings"/>
+		</StackPanel>
+
+		<ContentControl Name="MainContent" Margin="16"/>
+	</DockPanel>
+</Window>
