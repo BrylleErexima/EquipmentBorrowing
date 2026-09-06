@@ -1,0 +1,42 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
+			 xmlns:domain="using:EquipmentBorrowing.Domain"
+             x:Class="EquipmentBorrowing.Desktop.Views.EquipmentView"
+             x:DataType="vm:EquipmentViewModel">
+	<Grid ColumnDefinitions="2*,1*" RowDefinitions="Auto,*,Auto">
+
+		<TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Equipment"
+				   FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
+
+		<ListBox Grid.Row="1" Grid.Column="0"
+				 ItemsSource="{Binding Equipment}"
+				 SelectedItem="{Binding SelectedEquipment}">
+			<ListBox.ItemTemplate>
+				<DataTemplate DataType="domain:Equipment">
+					<StackPanel Margin="4">
+						<TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+						<TextBlock Text="{Binding Id, StringFormat='ID: {0}'}" Opacity="0.6" FontSize="12"/>
+						<TextBlock Text="{Binding IsAvailable, StringFormat='Available: {0}'}"/>
+					</StackPanel>
+				</DataTemplate>
+			</ListBox.ItemTemplate>
+		</ListBox>
+
+		<StackPanel Grid.Row="1" Grid.Column="1" Spacing="10" Margin="16,0,0,0">
+			<TextBlock Text="Borrow Equipment" FontWeight="SemiBold"/>
+
+			<TextBlock Text="Student"/>
+			<ComboBox ItemsSource="{Binding Students}"
+					  SelectedItem="{Binding SelectedStudent}"
+					  DisplayMemberBinding="{Binding Name}"/>
+
+			<TextBlock Text="Expected Return Date"/>
+			<CalendarDatePicker SelectedDate="{Binding ExpectedReturnDate}"/>
+
+			<Button Content="Borrow Equipment"/>
+
+			<TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap"/>
+		</StackPanel>
+	</Grid>
+</UserControl>
