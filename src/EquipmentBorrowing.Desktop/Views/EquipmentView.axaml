@@ -34,7 +34,7 @@
 			<TextBlock Text="Expected Return Date"/>
 			<CalendarDatePicker SelectedDate="{Binding ExpectedReturnDate}"/>
 
-			<Button Content="Borrow Equipment"/>
+			<Button Content="Borrow Equipment" Command="{Binding BorrowCommand}"/>
 
 			<TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap"/>
 		</StackPanel>

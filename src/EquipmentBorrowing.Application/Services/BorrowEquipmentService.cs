@@ -42,13 +42,15 @@ public class BorrowEquipmentService
             return new(false, "Equipment is not available.");
 
         var activeBorrowings = await _borrowingRepository
-            .GetActiveByStudentIdAsync(studentId, cancellationToken);
+    .GetActiveByStudentIdAsync(studentId, cancellationToken);
 
         if (activeBorrowings.Count >= student.MaxActiveBorrowings)
             return new(false, "Student has reached the maximum number of active borrowings.");
 
+        var allBorrowings = await _borrowingRepository.GetAllAsync(cancellationToken);
+
         var borrowing = new Borrowing(
-            id: activeBorrowings.Count + 1,
+            id: allBorrowings.Count + 1,   
             studentId: student.Id,
             equipmentId: equipment.Id,
             dateBorrowed: DateTime.Today,
