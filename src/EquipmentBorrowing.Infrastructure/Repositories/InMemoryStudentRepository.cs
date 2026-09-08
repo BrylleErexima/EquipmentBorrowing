@@ -11,4 +11,7 @@ public class InMemoryStudentRepository : IStudentRepository
 
     public Task<Student?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         => Task.FromResult(_students.FirstOrDefault(s => s.Id == id));
+
+    public Task<List<Student>> GetAllAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult(_students.ToList());
 }
