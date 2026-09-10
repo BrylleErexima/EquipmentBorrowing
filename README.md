@@ -109,3 +109,84 @@ dotnet run --project tests/EquipmentBorrowing.Tests
 ```
 
 No database, Entity Framework Core, or graphical interface is used in this activity.
+
+## Desktop Project (Laboratory Activity 2)
+
+`EquipmentBorrowing.Desktop` is the Avalonia presentation layer added on top of the Laboratory Activity 1
+architecture. It references `EquipmentBorrowing.Application` and `EquipmentBorrowing.Infrastructure`
+only and contains no domain or business logic. Its responsibilities are limited to displaying data,
+collecting input, holding presentation state (ViewModels), and invoking existing application services.
+
+## Updated Architecture
+
+Avalonia View
+   |  binding / command
+   v
+ViewModel
+   |  application operation
+   v
+Application Service
+   |
+   +--> Domain
+   |
+   v
+Repository Interface
+   ^
+   |
+Infrastructure Implementation
+
+## Borrow Equipment Flow
+1. User selects a student, equipment item, and expected return date in `EquipmentView`.
+2. Pressing "Borrow Equipment" triggers `EquipmentViewModel.BorrowCommand`.
+3. The ViewModel performs presentation-only validation (required selections, valid future date).
+4. The ViewModel calls `BorrowEquipmentService.BorrowAsync(...)`.
+5. The service applies business rules (availability, borrowing limits, eligibility) using
+   repositories and domain entities, creates a new `Borrowing` with `Status = BorrowingStatus.Active`,
+   and returns a result.
+6. The ViewModel updates `StatusMessage` and refreshes the equipment collection.
+
+## Return Equipment Flow
+1. User selects an active borrowing in `BorrowingsView`.
+2. Pressing "Return Equipment" triggers `BorrowingsViewModel.ReturnCommand`.
+3. The ViewModel calls `ReturnEquipmentService.ReturnAsync(borrowingId)`.
+4. The service locates the borrowing by ID, checks that its `Status` is `BorrowingStatus.Active`
+   (rejecting the request otherwise), calls `borrowing.MarkReturned()` to flip its status to
+   `BorrowingStatus.Returned`, and marks the related equipment available again via the repositories.
+5. The ViewModel updates `StatusMessage` and reloads both the borrowings and equipment lists.
+6. When `BorrowingsViewModel.LoadAsync()` re-fetches active borrowings,
+   `InMemoryBorrowingRepository.GetActiveAsync()` joins each `Borrowing` against
+   `IEquipmentRepository`/`IStudentRepository` by ID to populate the read-only display fields
+   `EquipmentName` and `StudentName` used by the view — this join is presentation shaping only and
+   does not affect any business decision.
+
+## Architectural Reflection
+
+1. **Why should the View not call a repository directly?**
+   It would bypass presentation state and let the UI reach data access without going through the
+   business rules in Application/Domain, breaking separation of concerns and making rule enforcement
+   inconsistent.
+
+2. **Why should business rules not be implemented in the ViewModel?**
+   They would then be duplicated or diverge between the UI and any other consumer of the Application
+   layer, and would be untestable without spinning up the UI framework.
+
+3. **What is the responsibility of the ViewModel?**
+   To hold presentation state, expose observable collections/properties for binding, define commands,
+   perform lightweight input validation, and delegate actual operations to application services.
+
+4. **Why can the existing Application layer work without knowing Avalonia is being used?**
+   Because it depends only on abstractions (repository interfaces) and plain C# types, with no reference
+   to any UI framework, so it can be reused by a desktop app, a web app, or tests unchanged.
+
+5. **What advantage is gained from registering dependencies in one composition point?**
+   All wiring decisions live in a single place (`App.axaml.cs`), so the rest of the app depends only on
+   interfaces, and swapping an implementation later requires changing one file, not the whole codebase.
+   This also matters concretely here: `InMemoryBorrowingRepository` itself now depends on
+   `IEquipmentRepository` and `IStudentRepository` to build display names, so the composition root is
+   what guarantees those two are registered and resolvable before `IBorrowingRepository` is constructed.
+
+6. **If the in-memory repository were replaced by SQLite later, which parts should remain unchanged?**
+   Domain, Application services, repository interfaces, and the entire Desktop project (Views and
+   ViewModels) — only the Infrastructure implementations and the DI registration in `App.axaml.cs`
+   would change. The `EquipmentName`/`StudentName` join in `GetActiveAsync()` would also carry over
+   unchanged, since it only calls the repository interfaces, not any in-memory-specific detail.
