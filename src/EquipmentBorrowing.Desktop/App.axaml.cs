@@ -49,7 +49,7 @@ public partial class App : Avalonia.Application
         {
             desktop.MainWindow = new MainWindow
             {
-                DataContext = Services.GetRequiredService<MainViewModel>()
+                DataContext = Services.GetRequiredService<MainWindowViewModel>()
             };
         }
 
@@ -82,7 +82,7 @@ public partial class App : Avalonia.Application
         services.AddTransient<BorrowEquipmentService>();
         services.AddTransient<ReturnEquipmentService>();
 
-        services.AddSingleton<MainViewModel>();
+        services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<EquipmentViewModel>();
         services.AddSingleton<BorrowingsViewModel>();
 >>>>>>> af48d0191fdb9a5f37fb5ec114e1fa7e4dddbf8a

@@ -5,8 +5,8 @@
              x:Class="EquipmentBorrowing.Desktop.Views.EquipmentView"
              x:DataType="vm:EquipmentViewModel">
 
+
 	<Grid ColumnDefinitions="*, 300" Margin="10">
-		<!-- Left: Equipment List -->
 		<ListBox Grid.Column="0" ItemsSource="{Binding EquipmentList}" SelectedItem="{Binding SelectedEquipment}" Margin="0,0,10,0">
 			<ListBox.ItemTemplate>
 				<DataTemplate x:DataType="domain:Equipment">
@@ -14,16 +14,33 @@
 						<TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="16"/>
 						<TextBlock Text="{Binding Id, StringFormat='ID: {0}'}"/>
 						<TextBlock Text="{Binding IsAvailable, StringFormat='Available: {0}'}"/>
+
+		<TextBlock Classes="heading" Grid.Row="0" Grid.ColumnSpan="2" Text="Equipment"
+				   FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
+
+		<ListBox Grid.Row="1" Grid.Column="0"
+				 ItemsSource="{Binding Equipment}"
+				 SelectedItem="{Binding SelectedEquipment}">
+			<ListBox.ItemTemplate>
+				<DataTemplate DataType="domain:Equipment">
+					<StackPanel Margin="4">
+						<TextBlock Classes="subheading" Text="{Binding Name}" FontWeight="Bold"/>
+						<TextBlock Classes="muted" Text="{Binding Id, StringFormat='ID: {0}'}" Opacity="0.6" FontSize="12"/>
+						<TextBlock Classes="muted" Text="{Binding IsAvailable, StringFormat='Available: {0}'}"/>
+
 					</StackPanel>
 				</DataTemplate>
 			</ListBox.ItemTemplate>
 		</ListBox>
 
-		<!-- Right: Borrow Panel -->
+
 		<StackPanel Grid.Column="1" Spacing="10">
 			<TextBlock Text="Borrow Equipment" FontSize="18" FontWeight="Bold"/>
 
-			<TextBlock Text="Student"/>
+		<StackPanel Grid.Row="1" Grid.Column="1" Spacing="10" Margin="16,0,0,0">
+			<TextBlock Classes="subheading" Text="Borrow Equipment" FontWeight="SemiBold"/>
+
+			<TextBlock Classes="muted" Text="Student"/>
 			<ComboBox ItemsSource="{Binding Students}"
                       SelectedItem="{Binding SelectedStudent}"
                       HorizontalAlignment="Stretch">
@@ -34,11 +51,19 @@
 				</ComboBox.ItemTemplate>
 			</ComboBox>
 
+
 			<TextBlock Text="Expected Return Date"/>
 			<DatePicker SelectedDate="{Binding ExpectedReturnDate}" HorizontalAlignment="Stretch"/>
 
 			<Button Content="Borrow Equipment" Command="{Binding BorrowCommand}" HorizontalAlignment="Stretch"/>
 			<TextBlock Text="{Binding StatusMessage}" Foreground="Yellow" TextWrapping="Wrap"/>
+	<TextBlock Classes="muted" Text="Expected Return Date"/>
+			<CalendarDatePicker SelectedDate="{Binding ExpectedReturnDate}"/>
+
+			<Button Classes="primary" Content="Borrow Equipment" Command="{Binding BorrowCommand}"/>
+
+			<TextBlock Classes="feedback" Text="{Binding StatusMessage}" TextWrapping="Wrap"/>
+
 		</StackPanel>
 	</Grid>
 </UserControl>

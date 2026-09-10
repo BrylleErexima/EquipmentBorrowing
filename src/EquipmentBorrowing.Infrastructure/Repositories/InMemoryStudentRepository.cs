@@ -23,6 +23,14 @@ public class InMemoryStudentRepository : IStudentRepository
 
     public Task<List<Student>> GetAllAsync(CancellationToken cancellationToken = default)
         => Task.FromResult(_students);
+    public InMemoryStudentRepository()
+    {
+        _students.Add(new Student(1, "Juan Dela Cruz"));
+        _students.Add(new Student(2, "Maria Santos"));
+        _students.Add(new Student(3, "Pedro Reyes"));
+    }
+
+    public void Add(Student student) => _students.Add(student);
 
     public Task<Student?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         => Task.FromResult(_students.FirstOrDefault(s => s.Id == id));

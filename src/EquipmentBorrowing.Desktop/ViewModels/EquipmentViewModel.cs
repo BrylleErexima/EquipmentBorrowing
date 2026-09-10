@@ -33,6 +33,12 @@ public partial class EquipmentViewModel : ViewModelBase
     [ObservableProperty]
     private string? _statusMessage;
 
+    [ObservableProperty] private Equipment? selectedEquipment;
+    [ObservableProperty] private Student? selectedStudent;
+    [ObservableProperty] private DateTime? expectedReturnDate = DateTime.Now.AddDays(3);
+    [ObservableProperty] private string? statusMessage;
+
+
     public EquipmentViewModel(
         IEquipmentRepository equipmentRepository,
         IStudentRepository studentRepository,
@@ -57,11 +63,18 @@ public partial class EquipmentViewModel : ViewModelBase
     [RelayCommand]
     private async Task BorrowAsync()
     {
+
         if (SelectedEquipment == null || SelectedStudent == null || ExpectedReturnDate == null)
+
+        if (SelectedStudent is null) { StatusMessage = "Please select a student."; return; }
+        if (SelectedEquipment is null) { StatusMessage = "Please select equipment."; return; }
+        if (ExpectedReturnDate is null || ExpectedReturnDate <= DateTime.Now)
+
         {
             StatusMessage = "Please select equipment, a student, and a return date.";
             return;
         }
+
 
         try
         {
@@ -69,6 +82,12 @@ public partial class EquipmentViewModel : ViewModelBase
                 SelectedEquipment.Id,
                 SelectedStudent.Id,
                 ExpectedReturnDate.Value.DateTime);
+
+        var result = await _borrowEquipmentService.BorrowAsync(
+            SelectedStudent.Id,
+            SelectedEquipment.Id,
+            ExpectedReturnDate.Value);  
+
 
             StatusMessage = "Equipment borrowed successfully!";
             await LoadDataAsync();

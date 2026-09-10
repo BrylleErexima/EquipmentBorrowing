@@ -10,21 +10,24 @@
 
 	<DockPanel>
 
-		<TextBlock DockPanel.Dock="Top"
+		<TextBlock Classes="heading"
+                   DockPanel.Dock="Top"
                    Text="Active Borrowings"
                    FontSize="18"
                    FontWeight="Bold"
                    Margin="0,0,0,8"/>
 
 		<StackPanel DockPanel.Dock="Bottom"
-                    Orientation="Horizontal"
+                    Orientation="Horizontal"    
                     Spacing="10"
                     Margin="0,8,0,0">
 
-			<Button Content="Return Equipment"
+			<Button Classes="primary" 
+					Content="Return Equipment"
                     Command="{Binding ReturnCommand}"/>
 
-			<TextBlock Text="{Binding StatusMessage}"
+			<TextBlock Classes="feedback" 
+					   Text="{Binding StatusMessage}"
                        VerticalAlignment="Center"/>
 
 		</StackPanel>
@@ -37,12 +40,15 @@
 
 					<StackPanel Margin="4">
 
-						<TextBlock Text="{Binding EquipmentName}"
+						<TextBlock Classes="subheading"
+                                   Text="{Binding EquipmentName}"
                                    FontWeight="Bold"/>
 
-						<TextBlock Text="{Binding StudentName}"/>
+						<TextBlock Classes="muted"
+                                   Text="{Binding StudentName}"/>
 
-						<TextBlock Text="{Binding ExpectedReturnDate, StringFormat='Due: {0:d}'}"
+						<TextBlock Classes="muted"
+                                   Text="{Binding ExpectedReturnDate, StringFormat='Due: {0:d}'}"
                                    Opacity="0.6"/>
 
 					</StackPanel>
