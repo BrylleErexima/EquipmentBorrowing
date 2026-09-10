@@ -1,6 +1,9 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="EquipmentBorrowing.Desktop.Views.BorrowingsView">
+             xmlns:vm="clr-namespace:EquipmentBorrowing.Desktop.ViewModels;assembly=EquipmentBorrowing.Desktop"
+             xmlns:domain="clr-namespace:EquipmentBorrowing.Domain;assembly=EquipmentBorrowing.Domain"
+             x:Class="EquipmentBorrowing.Desktop.Views.BorrowingsView"
+             x:DataType="vm:BorrowingsViewModel">
     <DockPanel Margin="10">
         <TextBlock DockPanel.Dock="Top" Text="Active Borrowings" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
         
@@ -11,12 +14,11 @@
 
         <ListBox ItemsSource="{Binding ActiveBorrowings}" SelectedItem="{Binding SelectedBorrowing}">
             <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock Text="{Binding Id}" />
-                        <TextBlock Text="{Binding EquipmentId}" FontWeight="Bold"/>
-                        <TextBlock Text="{Binding StudentId}"/>
-                        <TextBlock Text="{Binding BorrowDate, StringFormat='{}{0:yyyy-MM-dd}'}"/>
+                <DataTemplate x:DataType="domain:Borrowing">
+                    <StackPanel Orientation="Horizontal" Spacing="15" Margin="5">
+                        <TextBlock Text="{Binding Id, StringFormat='Borrowing #{0}'}" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding EquipmentId, StringFormat='Equipment ID: {0}'}"/>
+                        <TextBlock Text="{Binding StudentId, StringFormat='Student ID: {0}'}"/>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>

@@ -13,58 +13,69 @@ public partial class EquipmentViewModel : ViewModelBase
 {
     private readonly IEquipmentRepository _equipmentRepository;
     private readonly IStudentRepository _studentRepository;
-    private readonly BorrowEquipmentService _borrowEquipmentService;
+    private readonly BorrowEquipmentService _borrowService;
 
-    public ObservableCollection<Equipment> Equipment { get; } = new();
-    public ObservableCollection<Student> Students { get; } = new();
+    [ObservableProperty]
+    private ObservableCollection<Equipment> _equipmentList = new();
 
-    [ObservableProperty] private Equipment? selectedEquipment;
-    [ObservableProperty] private Student? selectedStudent;
-    [ObservableProperty] private DateTimeOffset? expectedReturnDate = DateTimeOffset.Now.AddDays(3);
-    [ObservableProperty] private string? statusMessage;
+    [ObservableProperty]
+    private ObservableCollection<Student> _students = new();
+
+    [ObservableProperty]
+    private Equipment? _selectedEquipment;
+
+    [ObservableProperty]
+    private Student? _selectedStudent;
+
+    [ObservableProperty]
+    private DateTimeOffset? _expectedReturnDate = DateTimeOffset.Now.AddDays(1);
+
+    [ObservableProperty]
+    private string? _statusMessage;
 
     public EquipmentViewModel(
         IEquipmentRepository equipmentRepository,
         IStudentRepository studentRepository,
-        BorrowEquipmentService borrowEquipmentService)
+        BorrowEquipmentService borrowService)
     {
         _equipmentRepository = equipmentRepository;
         _studentRepository = studentRepository;
-        _borrowEquipmentService = borrowEquipmentService;
-        _ = LoadAsync();
+        _borrowService = borrowService;
+
+        _ = LoadDataAsync();
     }
 
-    public async Task LoadAsync()
+    public async Task LoadDataAsync()
     {
-        Equipment.Clear();
-        foreach (var item in await _equipmentRepository.GetAllAsync())
-            Equipment.Add(item);
+        var equipment = await _equipmentRepository.GetAllAsync();
+        EquipmentList = new ObservableCollection<Equipment>(equipment);
 
-        Students.Clear();
-        foreach (var student in await _studentRepository.GetAllAsync())
-            Students.Add(student);
+        var students = await _studentRepository.GetAllAsync();
+        Students = new ObservableCollection<Student>(students);
     }
 
     [RelayCommand]
     private async Task BorrowAsync()
     {
-        // Presentation validation only — no business rules here
-        if (SelectedStudent is null) { StatusMessage = "Please select a student."; return; }
-        if (SelectedEquipment is null) { StatusMessage = "Please select equipment."; return; }
-        if (ExpectedReturnDate is null || ExpectedReturnDate <= DateTimeOffset.Now)
+        if (SelectedEquipment == null || SelectedStudent == null || ExpectedReturnDate == null)
         {
-            StatusMessage = "Please choose a valid future return date.";
+            StatusMessage = "Please select equipment, a student, and a return date.";
             return;
         }
 
-        var result = await _borrowEquipmentService.BorrowAsync(
-            SelectedStudent.Id,
-            SelectedEquipment.Id,
-            ExpectedReturnDate.Value.DateTime);
+        try
+        {
+            await _borrowService.BorrowAsync(
+                SelectedEquipment.Id,
+                SelectedStudent.Id,
+                ExpectedReturnDate.Value.DateTime);
 
-        StatusMessage = result.Message;
-
-        if (result.Success)
-            await LoadAsync();
+            StatusMessage = "Equipment borrowed successfully!";
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error: {ex.Message}";
+        }
     }
 }

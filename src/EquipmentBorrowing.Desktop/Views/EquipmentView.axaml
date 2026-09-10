@@ -1,42 +1,44 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
-			 xmlns:domain="using:EquipmentBorrowing.Domain"
+             xmlns:vm="clr-namespace:EquipmentBorrowing.Desktop.ViewModels;assembly=EquipmentBorrowing.Desktop"
+             xmlns:domain="clr-namespace:EquipmentBorrowing.Domain;assembly=EquipmentBorrowing.Domain"
              x:Class="EquipmentBorrowing.Desktop.Views.EquipmentView"
              x:DataType="vm:EquipmentViewModel">
-	<Grid ColumnDefinitions="2*,1*" RowDefinitions="Auto,*,Auto">
 
-		<TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Equipment"
-				   FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
-
-		<ListBox Grid.Row="1" Grid.Column="0"
-				 ItemsSource="{Binding Equipment}"
-				 SelectedItem="{Binding SelectedEquipment}">
+	<Grid ColumnDefinitions="*, 300" Margin="10">
+		<!-- Left: Equipment List -->
+		<ListBox Grid.Column="0" ItemsSource="{Binding EquipmentList}" SelectedItem="{Binding SelectedEquipment}" Margin="0,0,10,0">
 			<ListBox.ItemTemplate>
-				<DataTemplate DataType="domain:Equipment">
-					<StackPanel Margin="4">
-						<TextBlock Text="{Binding Name}" FontWeight="Bold"/>
-						<TextBlock Text="{Binding Id, StringFormat='ID: {0}'}" Opacity="0.6" FontSize="12"/>
+				<DataTemplate x:DataType="domain:Equipment">
+					<StackPanel Margin="5">
+						<TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="16"/>
+						<TextBlock Text="{Binding Id, StringFormat='ID: {0}'}"/>
 						<TextBlock Text="{Binding IsAvailable, StringFormat='Available: {0}'}"/>
 					</StackPanel>
 				</DataTemplate>
 			</ListBox.ItemTemplate>
 		</ListBox>
 
-		<StackPanel Grid.Row="1" Grid.Column="1" Spacing="10" Margin="16,0,0,0">
-			<TextBlock Text="Borrow Equipment" FontWeight="SemiBold"/>
+		<!-- Right: Borrow Panel -->
+		<StackPanel Grid.Column="1" Spacing="10">
+			<TextBlock Text="Borrow Equipment" FontSize="18" FontWeight="Bold"/>
 
 			<TextBlock Text="Student"/>
 			<ComboBox ItemsSource="{Binding Students}"
-					  SelectedItem="{Binding SelectedStudent}"
-					  DisplayMemberBinding="{Binding Name}"/>
+                      SelectedItem="{Binding SelectedStudent}"
+                      HorizontalAlignment="Stretch">
+				<ComboBox.ItemTemplate>
+					<DataTemplate x:DataType="domain:Student">
+						<TextBlock Text="{Binding Name}"/>
+					</DataTemplate>
+				</ComboBox.ItemTemplate>
+			</ComboBox>
 
 			<TextBlock Text="Expected Return Date"/>
-			<CalendarDatePicker SelectedDate="{Binding ExpectedReturnDate}"/>
+			<DatePicker SelectedDate="{Binding ExpectedReturnDate}" HorizontalAlignment="Stretch"/>
 
-			<Button Content="Borrow Equipment" Command="{Binding BorrowCommand}"/>
-
-			<TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap"/>
+			<Button Content="Borrow Equipment" Command="{Binding BorrowCommand}" HorizontalAlignment="Stretch"/>
+			<TextBlock Text="{Binding StatusMessage}" Foreground="Yellow" TextWrapping="Wrap"/>
 		</StackPanel>
 	</Grid>
 </UserControl>

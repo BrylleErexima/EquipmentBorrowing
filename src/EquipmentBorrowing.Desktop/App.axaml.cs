@@ -1,17 +1,16 @@
 using System;
-using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Application.Services;
 using EquipmentBorrowing.Infrastructure.Repositories;
-using EquipmentBorrowing.Desktop.ViewModels;
+using EquipmentBorrowing.Desktop.ViewModels; // <-- Add this missing line
 using EquipmentBorrowing.Desktop.Views;
 
 namespace EquipmentBorrowing.Desktop;
 
-public partial class App : Application
+public partial class App : Avalonia.Application
 {
     public static IServiceProvider? Services { get; private set; }
 
@@ -30,7 +29,7 @@ public partial class App : Application
         {
             desktop.MainWindow = new MainWindow
             {
-                DataContext = Services.GetRequiredService<MainWindowViewModel>()
+                DataContext = Services.GetRequiredService<MainViewModel>()
             };
         }
 
@@ -39,7 +38,7 @@ public partial class App : Application
 
     private void ConfigureServices(IServiceCollection services)
     {
-        // Repositories MUST be Singletons to keep in-memory state alive
+        // Repositories
         services.AddSingleton<IEquipmentRepository, InMemoryEquipmentRepository>();
         services.AddSingleton<IBorrowingRepository, InMemoryBorrowingRepository>();
         services.AddSingleton<IStudentRepository, InMemoryStudentRepository>();
@@ -49,7 +48,7 @@ public partial class App : Application
         services.AddTransient<ReturnEquipmentService>();
 
         // ViewModels
-        services.AddTransient<MainWindowViewModel>();
+        services.AddTransient<MainViewModel>();
         services.AddTransient<EquipmentViewModel>();
         services.AddTransient<BorrowingsViewModel>();
     }

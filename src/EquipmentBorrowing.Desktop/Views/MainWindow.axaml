@@ -1,16 +1,17 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="clr-namespace:EquipmentBorrowing.Desktop.ViewModels"
+        xmlns:vm="clr-namespace:EquipmentBorrowing.Desktop.ViewModels;assembly=EquipmentBorrowing.Desktop"
         x:Class="EquipmentBorrowing.Desktop.Views.MainWindow"
-        Title="Campus Equipment Borrowing System" Width="900" Height="600">
-	<Grid ColumnDefinitions="200, *">
-		<!-- Sidebar Navigation -->
-		<StackPanel Grid.Column="0" Background="#F0F0F0" Margin="10">
-			<TextBlock Text="Menu" FontWeight="Bold" Margin="0,0,0,10"/>
-			<Button Content="Equipment" Command="{Binding NavigateToEquipmentCommand}" Margin="0,5"/>
-			<Button Content="Active Borrowings" Command="{Binding NavigateToBorrowingsCommand}" Margin="0,5"/>
+        x:DataType="vm:MainViewModel"
+        Title="Equipment Borrowing System"
+        Width="800" Height="500">
+
+	<DockPanel>
+		<StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="10">
+			<Button Content="Equipment" Command="{Binding NavigateToEquipmentCommand}" />
+			<Button Content="Borrowings" Command="{Binding NavigateToBorrowingsCommand}" />
 		</StackPanel>
-		<!-- Content Area -->
-		<TransitioningContentControl Grid.Column="1" Content="{Binding CurrentView}" Margin="10"/>
-	</Grid>
+
+		<TransitioningContentControl Content="{Binding CurrentView}" Margin="10" />
+	</DockPanel>
 </Window>
