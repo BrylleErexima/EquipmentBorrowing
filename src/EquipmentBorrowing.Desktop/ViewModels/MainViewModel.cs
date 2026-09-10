@@ -1,9 +1,30 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
 
-public partial class MainViewModel : ViewModelBase
+public partial class MainWindowViewModel : ObservableObject
 {
     [ObservableProperty]
-    public partial string Greeting { get; set; } = "Welcome to Avalonia!";
+    private ObservableObject _currentView;
+
+    public EquipmentViewModel EquipmentVm { get; }
+    public BorrowingsViewModel BorrowingsVm { get; }
+
+    public MainWindowViewModel(EquipmentViewModel equipmentVm, BorrowingsViewModel borrowingsVm)
+    {
+        EquipmentVm = equipmentVm;
+        BorrowingsVm = borrowingsVm;
+        _currentView = EquipmentVm;
+    }
+
+    [RelayCommand]
+    private void NavigateToEquipment() => CurrentView = EquipmentVm;
+
+    [RelayCommand]
+    private async Task NavigateToBorrowings()
+    {
+        await BorrowingsVm.LoadBorrowingsAsync();
+        CurrentView = BorrowingsVm;
+    }
 }
