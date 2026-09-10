@@ -1,0 +1,58 @@
+﻿<UserControl
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
+    xmlns:domain="using:EquipmentBorrowing.Domain"
+    x:Class="EquipmentBorrowing.Desktop.Views.BorrowingsView"
+    x:DataType="vm:BorrowingsViewModel">
+
+	<DockPanel>
+
+		<TextBlock DockPanel.Dock="Top"
+                   Text="Active Borrowings"
+                   FontSize="18"
+                   FontWeight="Bold"
+                   Margin="0,0,0,8"/>
+
+		<StackPanel DockPanel.Dock="Bottom"
+                    Orientation="Horizontal"
+                    Spacing="10"
+                    Margin="0,8,0,0">
+
+			<Button Content="Return Equipment"
+                    Command="{Binding ReturnCommand}"/>
+
+			<TextBlock Text="{Binding StatusMessage}"
+                       VerticalAlignment="Center"/>
+
+		</StackPanel>
+
+		<ListBox ItemsSource="{Binding ActiveBorrowings}"
+                 SelectedItem="{Binding SelectedBorrowing}">
+
+			<ListBox.ItemTemplate>
+				<DataTemplate DataType="domain:Borrowing">
+
+					<StackPanel Margin="4">
+
+						<TextBlock Text="{Binding EquipmentName}"
+                                   FontWeight="Bold"/>
+
+						<TextBlock Text="{Binding StudentName}"/>
+
+						<TextBlock Text="{Binding ExpectedReturnDate, StringFormat='Due: {0:d}'}"
+                                   Opacity="0.6"/>
+
+					</StackPanel>
+
+				</DataTemplate>
+
+			</ListBox.ItemTemplate>
+
+		</ListBox>
+
+	</DockPanel>
+
+</UserControl>
