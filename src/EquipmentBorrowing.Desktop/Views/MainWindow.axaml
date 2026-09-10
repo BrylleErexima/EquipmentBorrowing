@@ -9,8 +9,11 @@
 				   FontSize="20" FontWeight="Bold" Margin="16"/>
 
 		<StackPanel DockPanel.Dock="Left" Width="180" Margin="8" Spacing="8">
-			<Button Content="Equipment"/>
-			<Button Content="Active Borrowings"/>
+			<Button Content="Equipment"
+					Click="EquipmentButton_Click"/>
+
+			<Button Content="Active Borrowings"
+					Click="ActiveBorrowingsButton_Click"/>
 		</StackPanel>
 
 		<ContentControl Name="MainContent" Margin="16"/>

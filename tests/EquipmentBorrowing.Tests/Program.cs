@@ -4,7 +4,9 @@ using EquipmentBorrowing.Infrastructure.Repositories;
 
 var students = new InMemoryStudentRepository();
 var equipment = new InMemoryEquipmentRepository();
-var borrowings = new InMemoryBorrowingRepository();
+var borrowings = new InMemoryBorrowingRepository(
+    equipment,
+    students);
 
 students.Add(new Student(1, "Juan Dela Cruz"));
 students.Add(new Student(2, "Maria Santos", canBorrow: false));

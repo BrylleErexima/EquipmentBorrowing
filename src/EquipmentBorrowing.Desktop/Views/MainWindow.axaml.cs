@@ -8,4 +8,14 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
     }
+
+    private void EquipmentButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        MainContent.Content = new EquipmentView();
+    }
+
+    private void ActiveBorrowingsButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        MainContent.Content = new BorrowingsView();
+    }
 }

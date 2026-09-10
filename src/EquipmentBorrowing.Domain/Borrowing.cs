@@ -8,6 +8,8 @@ public class Borrowing
     public DateTime DateBorrowed { get; }
     public DateTime ExpectedReturnDate { get; }
     public BorrowingStatus Status { get; private set; }
+    public string? EquipmentName { get; set; }
+    public string? StudentName { get; set; }
 
     public Borrowing(int id, int studentId, int equipmentId, DateTime dateBorrowed, DateTime expectedReturnDate)
     {

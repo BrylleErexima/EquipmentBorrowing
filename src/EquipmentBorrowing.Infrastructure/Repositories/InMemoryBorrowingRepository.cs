@@ -6,6 +6,16 @@ namespace EquipmentBorrowing.Infrastructure.Repositories;
 public class InMemoryBorrowingRepository : IBorrowingRepository
 {
     private readonly List<Borrowing> _borrowings = new();
+    private readonly IEquipmentRepository _equipmentRepository;
+    private readonly IStudentRepository _studentRepository;
+
+    public InMemoryBorrowingRepository(
+        IEquipmentRepository equipmentRepository,
+        IStudentRepository studentRepository)
+    {
+        _equipmentRepository = equipmentRepository;
+        _studentRepository = studentRepository;
+    }
 
     public Task AddAsync(Borrowing borrowing, CancellationToken cancellationToken = default)
     {
@@ -31,13 +41,23 @@ public class InMemoryBorrowingRepository : IBorrowingRepository
         => Task.FromResult(_borrowings.FirstOrDefault(b => b.Id == id));
 
     public Task UpdateAsync(Borrowing borrowing, CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
-    public Task<IReadOnlyList<Borrowing>> GetActiveAsync(CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
+    public async Task<IReadOnlyList<Borrowing>> GetActiveAsync(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<Borrowing> result = _borrowings
+        var active = _borrowings
             .Where(b => b.Status == BorrowingStatus.Active)
             .ToList();
 
-        return Task.FromResult(result);
+        foreach (var borrowing in active)
+        {
+            var equipment = await _equipmentRepository.GetByIdAsync(borrowing.EquipmentId, cancellationToken);
+            var student = await _studentRepository.GetByIdAsync(borrowing.StudentId, cancellationToken);
+
+            borrowing.EquipmentName = equipment?.Name ?? "Unknown equipment";
+            borrowing.StudentName = student?.Name ?? "Unknown student";
+        }
+
+        return active;
     }
-}
+}   
