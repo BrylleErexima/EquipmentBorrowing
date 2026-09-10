@@ -6,30 +6,6 @@ namespace EquipmentBorrowing.Desktop.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject
 {
-
-    [ObservableProperty]
-    private ViewModelBase _currentView;
-
-    public EquipmentViewModel EquipmentVm { get; }
-    public BorrowingsViewModel BorrowingsVm { get; }
-
-    public MainViewModel(EquipmentViewModel equipmentVm, BorrowingsViewModel borrowingsVm)
-    {
-        EquipmentVm = equipmentVm;
-        BorrowingsVm = borrowingsVm;
-        _currentView = EquipmentVm;
-    }
-
-    [RelayCommand]
-    private void NavigateToEquipment() => CurrentView = EquipmentVm;
-
-    [RelayCommand]
-    private async Task NavigateToBorrowings()
-    {
-        await BorrowingsVm.LoadBorrowingsAsync();
-        CurrentView = BorrowingsVm;
-    }
-
     [ObservableProperty] private ViewModelBase currentView;
 
     public EquipmentViewModel EquipmentViewModel { get; }
@@ -42,6 +18,17 @@ public partial class MainWindowViewModel : ObservableObject
         currentView = equipmentViewModel;
     }
 
-    [RelayCommand] private void ShowEquipment() => CurrentView = EquipmentViewModel;
-    [RelayCommand] private void ShowBorrowings() => CurrentView = BorrowingsViewModel;
+    [RelayCommand]
+    private async Task ShowEquipment()
+    {
+        await EquipmentViewModel.LoadAsync();
+        CurrentView = EquipmentViewModel;
+    }
+
+    [RelayCommand]
+    private async Task ShowBorrowings()
+    {
+        await BorrowingsViewModel.LoadAsync();
+        CurrentView = BorrowingsViewModel;
+    }
 }

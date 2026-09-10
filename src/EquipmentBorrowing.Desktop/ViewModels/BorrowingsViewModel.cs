@@ -1,109 +1,74 @@
-<<<<<<< HEAD
-using System;
-=======
->>>>>>> af48d0191fdb9a5f37fb5ec114e1fa7e4dddbf8a
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Application.Services;
-using EquipmentBorrowing.Domain;
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
 
 public partial class BorrowingsViewModel : ViewModelBase
 {
     private readonly IBorrowingRepository _borrowingRepository;
-<<<<<<< HEAD
-    private readonly ReturnEquipmentService _returnService;
-
-    [ObservableProperty]
-    private ObservableCollection<Borrowing> _activeBorrowings = new();
-
-    [ObservableProperty]
-    private Borrowing? _selectedBorrowing;
-
-    [ObservableProperty]
-    private string? _statusMessage;
-
-    public BorrowingsViewModel(IBorrowingRepository borrowingRepository, ReturnEquipmentService returnService)
-    {
-        _borrowingRepository = borrowingRepository;
-        _returnService = returnService;
-    }
-
-    public async Task LoadBorrowingsAsync()
-    {
-        var borrowings = await _borrowingRepository.GetActiveAsync();
-        ActiveBorrowings = new ObservableCollection<Borrowing>(borrowings);
-=======
+    private readonly IEquipmentRepository _equipmentRepository;
+    private readonly IStudentRepository _studentRepository;
     private readonly ReturnEquipmentService _returnEquipmentService;
 
-    public ObservableCollection<Borrowing> ActiveBorrowings { get; } = new();
+    public ObservableCollection<BorrowingDisplayItem> ActiveBorrowings { get; } = new();
 
-    [ObservableProperty]
-    private Borrowing? selectedBorrowing;
-
-    [ObservableProperty]
-    private string? statusMessage;
+    [ObservableProperty] private BorrowingDisplayItem? selectedBorrowing;
+    [ObservableProperty] private string? statusMessage;
 
     public BorrowingsViewModel(
         IBorrowingRepository borrowingRepository,
+        IEquipmentRepository equipmentRepository,
+        IStudentRepository studentRepository,
         ReturnEquipmentService returnEquipmentService)
     {
         _borrowingRepository = borrowingRepository;
+        _equipmentRepository = equipmentRepository;
+        _studentRepository = studentRepository;
         _returnEquipmentService = returnEquipmentService;
-
         _ = LoadAsync();
     }
 
     public async Task LoadAsync()
     {
-        ActiveBorrowings.Clear();
+        var activeBorrowings = await _borrowingRepository.GetActiveAsync();
+        var equipment = await _equipmentRepository.GetAllAsync();
+        var students = await _studentRepository.GetAllAsync();
 
-        foreach (var borrowing in await _borrowingRepository.GetActiveAsync())
+        ActiveBorrowings.Clear();
+        foreach (var borrowing in activeBorrowings)
         {
-            ActiveBorrowings.Add(borrowing);
+            var equipmentName = equipment.FirstOrDefault(e => e.Id == borrowing.EquipmentId)?.Name ?? "Unknown equipment";
+            var studentName = students.FirstOrDefault(s => s.Id == borrowing.StudentId)?.Name ?? "Unknown student";
+
+            ActiveBorrowings.Add(new BorrowingDisplayItem
+            {
+                BorrowingId = borrowing.Id,
+                EquipmentName = equipmentName,
+                StudentName = studentName,
+                ExpectedReturnDate = borrowing.ExpectedReturnDate
+            });
         }
->>>>>>> af48d0191fdb9a5f37fb5ec114e1fa7e4dddbf8a
     }
 
     [RelayCommand]
     private async Task ReturnAsync()
     {
-<<<<<<< HEAD
-        if (SelectedBorrowing == null)
-=======
         if (SelectedBorrowing is null)
->>>>>>> af48d0191fdb9a5f37fb5ec114e1fa7e4dddbf8a
         {
             StatusMessage = "Please select a borrowing record to return.";
             return;
         }
 
-<<<<<<< HEAD
-        try
-        {
-            await _returnService.ReturnAsync(SelectedBorrowing.Id);
-            StatusMessage = "Equipment returned successfully!";
-            await LoadBorrowingsAsync();
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Return failed: {ex.Message}";
-=======
-        var result = await _returnEquipmentService.ReturnAsync(
-            SelectedBorrowing.Id);
+        var result = await _returnEquipmentService.ReturnAsync(SelectedBorrowing.BorrowingId);
 
-        StatusMessage = result.Success
-            ? "Equipment returned successfully."
-            : result.ErrorMessage;
+        StatusMessage = result.Success ? "Equipment returned successfully." : result.ErrorMessage;
 
         if (result.Success)
-        {
             await LoadAsync();
->>>>>>> af48d0191fdb9a5f37fb5ec114e1fa7e4dddbf8a
-        }
     }
 }

@@ -50,11 +50,15 @@ public class BorrowEquipmentService
         var allBorrowings = await _borrowingRepository.GetAllAsync(cancellationToken);
 
         var borrowing = new Borrowing(
-            id: allBorrowings.Count + 1,   
+            id: allBorrowings.Count + 1,
             studentId: student.Id,
             equipmentId: equipment.Id,
             dateBorrowed: DateTime.Today,
-            expectedReturnDate: expectedReturnDate);
+            expectedReturnDate: expectedReturnDate)
+        {
+            EquipmentName = equipment.Name,
+            StudentName = student.Name
+        };
 
         await _borrowingRepository.AddAsync(borrowing, cancellationToken);
 
