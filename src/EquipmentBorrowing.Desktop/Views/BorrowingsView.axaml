@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="EquipmentBorrowing.Desktop.Views.BorrowingsView">
+    <DockPanel Margin="10">
+        <TextBlock DockPanel.Dock="Top" Text="Active Borrowings" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+        
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+            <Button Content="Return Selected Equipment" Command="{Binding ReturnCommand}" HorizontalAlignment="Left"/>
+            <TextBlock Text="{Binding StatusMessage}" Foreground="Red" Margin="0,5,0,0"/>
+        </StackPanel>
+
+        <ListBox ItemsSource="{Binding ActiveBorrowings}" SelectedItem="{Binding SelectedBorrowing}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="{Binding Id}" />
+                        <TextBlock Text="{Binding EquipmentId}" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding StudentId}"/>
+                        <TextBlock Text="{Binding BorrowDate, StringFormat='{}{0:yyyy-MM-dd}'}"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </DockPanel>
+</UserControl>
