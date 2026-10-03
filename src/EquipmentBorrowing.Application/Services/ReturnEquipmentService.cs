@@ -25,7 +25,7 @@ public class ReturnEquipmentService
         if (borrowing.Status == BorrowingStatus.Returned)
             return ReturnResult.Fail("This equipment has already been returned.");
 
-        borrowing.MarkReturned();
+        borrowing.MarkReturned(DateTime.Now);
         await _borrowingRepository.UpdateAsync(borrowing);
 
         var equipment = await _equipmentRepository.GetByIdAsync(borrowing.EquipmentId);

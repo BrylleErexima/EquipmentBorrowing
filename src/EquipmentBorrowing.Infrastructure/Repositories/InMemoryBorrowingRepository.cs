@@ -43,21 +43,12 @@ public class InMemoryBorrowingRepository : IBorrowingRepository
     public Task UpdateAsync(Borrowing borrowing, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
-    public async Task<IReadOnlyList<Borrowing>> GetActiveAsync(CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<Borrowing>> GetActiveAsync(CancellationToken cancellationToken = default)
     {
-        var active = _borrowings
+        IReadOnlyList<Borrowing> active = _borrowings
             .Where(b => b.Status == BorrowingStatus.Active)
             .ToList();
 
-        foreach (var borrowing in active)
-        {
-            var equipment = await _equipmentRepository.GetByIdAsync(borrowing.EquipmentId, cancellationToken);
-            var student = await _studentRepository.GetByIdAsync(borrowing.StudentId, cancellationToken);
-
-            borrowing.EquipmentName = equipment?.Name ?? "Unknown equipment";
-            borrowing.StudentName = student?.Name ?? "Unknown student";
-        }
-
-        return active;
+        return Task.FromResult(active);
     }
-}   
+}
