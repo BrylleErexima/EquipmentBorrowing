@@ -3,10 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EquipmentBorrowing.Domain;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace EquipmentBorrowing.Infrastructure.Persistence.Configurations
+namespace EquipmentBorrowing.Infrastructure.Persistence.Configurations;
+
+public class StudentConfiguration : IEntityTypeConfiguration<Student>
 {
-    internal class StudentConfiguration
+    public void Configure(EntityTypeBuilder<Student> builder)
     {
+        builder.HasKey(s => s.Id);
+        builder.Property(s => s.Name)
+               .IsRequired()
+               .HasMaxLength(100);
+        builder.Property(s => s.CanBorrow)
+               .IsRequired();
+        builder.Property(s => s.MaxActiveBorrowings)
+               .IsRequired();
     }
 }
