@@ -29,6 +29,13 @@ public partial class App : Avalonia.Application
 
         Services = services.BuildServiceProvider();
 
+        // Ensure database schema is created and updated at startup
+        using (var scope = Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<EquipmentBorrowingDbContext>();
+            dbContext.Database.Migrate();
+        }
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new MainWindow
@@ -42,20 +49,17 @@ public partial class App : Avalonia.Application
 
     private static void ConfigureServices(IServiceCollection services)
     {
-        // EF Core DbContext
+        // SQLite connection setup
         services.AddDbContext<EquipmentBorrowingDbContext>(options =>
             options.UseSqlite("Data Source=app.db"));
 
-        // EF Core Repositories
         services.AddScoped<IEquipmentRepository, EfEquipmentRepository>();
         services.AddScoped<IStudentRepository, EfStudentRepository>();
         services.AddScoped<IBorrowingRepository, EfBorrowingRepository>();
 
-        // Application Services
         services.AddTransient<BorrowEquipmentService>();
         services.AddTransient<ReturnEquipmentService>();
 
-        // ViewModels
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<EquipmentViewModel>();
         services.AddSingleton<BorrowingsViewModel>();
