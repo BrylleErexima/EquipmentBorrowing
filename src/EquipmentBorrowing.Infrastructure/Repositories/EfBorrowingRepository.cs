@@ -24,17 +24,26 @@ public class EfBorrowingRepository : IBorrowingRepository
 
     public async Task<Borrowing?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _context.Borrowings.FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
+        return await _context.Borrowings
+            .Include(b => b.Student)
+            .Include(b => b.Equipment)
+            .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
     }
 
     public async Task<IReadOnlyList<Borrowing>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.Borrowings.AsNoTracking().ToListAsync(cancellationToken);
+        return await _context.Borrowings
+            .Include(b => b.Student)
+            .Include(b => b.Equipment)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<Borrowing>> GetActiveByStudentIdAsync(int studentId, CancellationToken cancellationToken = default)
     {
         return await _context.Borrowings
+            .Include(b => b.Student)
+            .Include(b => b.Equipment)
             .AsNoTracking()
             .Where(b => b.StudentId == studentId && b.Status == BorrowingStatus.Active)
             .ToListAsync(cancellationToken);
@@ -43,6 +52,8 @@ public class EfBorrowingRepository : IBorrowingRepository
     public async Task<IReadOnlyList<Borrowing>> GetActiveAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Borrowings
+            .Include(b => b.Student)
+            .Include(b => b.Equipment)
             .AsNoTracking()
             .Where(b => b.Status == BorrowingStatus.Active)
             .ToListAsync(cancellationToken);
