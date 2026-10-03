@@ -47,6 +47,7 @@ public partial class App : Avalonia.Application
         base.OnFrameworkInitializationCompleted();
     }
 
+    // Finalized EF Core SQLite persistence layer configuration
     private static void ConfigureServices(IServiceCollection services)
     {
         // SQLite connection setup
