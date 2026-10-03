@@ -51,7 +51,8 @@ public partial class App : Avalonia.Application
     {
         // SQLite connection setup
         services.AddDbContext<EquipmentBorrowingDbContext>(options =>
-            options.UseSqlite("Data Source=app.db"));
+            options.UseSqlite("Data Source=app.db")
+                .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information));
 
         services.AddScoped<IEquipmentRepository, EfEquipmentRepository>();
         services.AddScoped<IStudentRepository, EfStudentRepository>();
