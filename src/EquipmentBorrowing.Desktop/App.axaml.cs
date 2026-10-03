@@ -2,8 +2,10 @@ using System;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Application.Services;
+using EquipmentBorrowing.Infrastructure.Persistence;
 using EquipmentBorrowing.Infrastructure.Repositories;
 using EquipmentBorrowing.Desktop.ViewModels;
 using EquipmentBorrowing.Desktop.Views;
@@ -40,10 +42,14 @@ public partial class App : Avalonia.Application
 
     private static void ConfigureServices(IServiceCollection services)
     {
-        // Repositories
-        services.AddSingleton<IEquipmentRepository, InMemoryEquipmentRepository>();
-        services.AddSingleton<IStudentRepository, InMemoryStudentRepository>();
-        services.AddSingleton<IBorrowingRepository, InMemoryBorrowingRepository>();
+        // EF Core DbContext
+        services.AddDbContext<EquipmentBorrowingDbContext>(options =>
+            options.UseSqlite("Data Source=app.db"));
+
+        // EF Core Repositories
+        services.AddScoped<IEquipmentRepository, EfEquipmentRepository>();
+        services.AddScoped<IStudentRepository, EfStudentRepository>();
+        services.AddScoped<IBorrowingRepository, EfBorrowingRepository>();
 
         // Application Services
         services.AddTransient<BorrowEquipmentService>();
