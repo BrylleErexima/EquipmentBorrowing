@@ -1,0 +1,105 @@
+           MigrationId            | ProductVersion
+----------------------------------+----------------
+ 20261118144542_PostgreSqlInitial | 10.0.11
+(1 row)
+
+ Id | StudentNumber | NormalizedNumber |          Name           | Contact | CanBorrow | Version
+----+---------------+------------------+-------------------------+---------+-----------+---------
+  1 | DEMO-001      | demo-001         | Ana Reyes               |         | t         |       1
+  2 | DEMO-002      | demo-002         | Juan Dela Cruz          |         | t         |       1
+  3 | DEMO-003      | demo-003         | Restricted Demo Student |         | f         |       1
+  4 | LAB-101       | lab-101          | Edited Student          |         | t         |       4
+  5 | LAB-200       | lab-200          | Other Student           |         | t         |       1
+  6 | LAB-300       | lab-300          | Empty History           |         | t         |       1
+ 11 | UI-001        | ui-001           | UI Edited Student       |         | t         |       4
+(7 rows)
+
+ Id | Identifier | NormalizedIdentifier |        Name         |  Description   | IsAvailable | Version
+----+------------+----------------------+---------------------+----------------+-------------+---------
+  1 | EQ-EDITED  | eq-edited            | Edited Laptop       |                | t           |       4
+  2 | EQ-002     | eq-002               | Canon Camera        | Digital camera | f           |       2
+  3 | EQ-003     | eq-003               | Epson Projector     | HD projector   | f           |       2
+  4 | EQ-004     | eq-004               | Tripod              |                | f           |       2
+  5 | EQ-005     | eq-005               | Microphone          |                | f           |       2
+  6 | LAB-EQ     | lab-eq               | New Item            |                | f           |       2
+  8 | LIMIT-1    | limit-1              | Limit Item 1        |                | f           |       2
+  9 | LIMIT-2    | limit-2              | Limit Item 2        |                | f           |       2
+ 10 | LIMIT-3    | limit-3              | Limit Item 3        |                | f           |       4
+ 11 | LIMIT-4    | limit-4              | Limit Item 4        |                | t           |       1
+ 12 | UI-EQ-1    | ui-eq-1              | UI Edited Equipment |                | f           |       5
+ 13 | UI-EQ-2    | ui-eq-2              | UI Equipment 2      |                | f           |       2
+(12 rows)
+
+ Id | StudentNumber |      Student      | Identifier |      Equipment      | DateBorrowed | ExpectedReturnDate | ActualReturnDate |  Status
+----+---------------+-------------------+------------+---------------------+--------------+--------------------+------------------+----------
+  1 | LAB-101       | Edited Student    | EQ-EDITED  | Edited Laptop       | 2026-11-18   | 2026-11-25         | 2026-11-18       | Returned
+  2 | LAB-101       | Edited Student    | EQ-002     | Canon Camera        | 2026-11-18   | 2026-11-26         |                  | Active
+  3 | LAB-101       | Edited Student    | EQ-003     | Epson Projector     | 2026-11-18   | 2026-11-26         |                  | Active
+  4 | LAB-101       | Edited Student    | EQ-004     | Tripod              | 2026-11-18   | 2026-11-25         |                  | Active
+  7 | LAB-200       | Other Student     | EQ-005     | Microphone          | 2026-11-18   | 2026-11-25         |                  | Active
+ 10 | LAB-200       | Other Student     | LAB-EQ     | New Item            | 2026-11-18   | 2026-11-25         |                  | Active
+ 11 | LAB-300       | Empty History     | LIMIT-1    | Limit Item 1        | 2026-11-18   | 2026-11-25         |                  | Active
+ 12 | LAB-300       | Empty History     | LIMIT-2    | Limit Item 2        | 2026-11-18   | 2026-11-25         |                  | Active
+ 13 | LAB-300       | Empty History     | LIMIT-3    | Limit Item 3        | 2026-11-18   | 2026-11-25         | 2026-11-18       | Returned
+ 14 | LAB-300       | Empty History     | LIMIT-3    | Limit Item 3        | 2026-11-18   | 2026-11-25         |                  | Active
+ 15 | UI-001        | UI Edited Student | UI-EQ-1    | UI Edited Equipment | 2026-11-18   | 2026-11-21         | 2026-11-18       | Returned
+ 16 | UI-001        | UI Edited Student | UI-EQ-1    | UI Edited Equipment | 2026-11-18   | 2026-11-21         |                  | Active
+ 17 | UI-001        | UI Edited Student | UI-EQ-2    | UI Equipment 2      | 2026-11-18   | 2026-11-21         |                  | Active
+(13 rows)
+
+ EquipmentId | count
+-------------+-------
+(0 rows)
+
+ StudentId | count
+-----------+-------
+(0 rows)
+
+ Id | IsAvailable
+----+-------------
+(0 rows)
+
+          Table          |                    conname                    |                                                                                                                                                                                                                                                                                                                                                                                                   pg_get_constraintdef
+-------------------------+-----------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ "Borrowings"            | Borrowings_DateBorrowed_not_null              | NOT NULL "DateBorrowed"
+ "Borrowings"            | Borrowings_EquipmentId_not_null               | NOT NULL "EquipmentId"
+ "Borrowings"            | Borrowings_ExpectedReturnDate_not_null        | NOT NULL "ExpectedReturnDate"
+ "Borrowings"            | Borrowings_Id_not_null                        | NOT NULL "Id"
+ "Borrowings"            | Borrowings_StudentId_not_null                 | NOT NULL "StudentId"
+ "Borrowings"            | CK_Borrowing_Expected                         | CHECK (("ExpectedReturnDate" > "DateBorrowed"))
+ "Borrowings"            | CK_Borrowing_Return                           | CHECK ((("ActualReturnDate" IS NULL) OR ("ActualReturnDate" >= "DateBorrowed")))
+ "Borrowings"            | FK_Borrowings_Equipments_EquipmentId          | FOREIGN KEY ("EquipmentId") REFERENCES "Equipments"("Id") ON DELETE RESTRICT
+ "Borrowings"            | FK_Borrowings_Students_StudentId              | FOREIGN KEY ("StudentId") REFERENCES "Students"("Id") ON DELETE RESTRICT
+ "Borrowings"            | PK_Borrowings                                 | PRIMARY KEY ("Id")
+ "Equipments"            | CK_Equipment_Description                      | CHECK ((("Description" IS NULL) OR (length(btrim("Description", ((((((((((((((((((((((((chr(9) || chr(10)) || chr(11)) || chr(12)) || chr(13)) || chr(32)) || chr(133)) || chr(160)) || chr(5760)) || chr(8192)) || chr(8193)) || chr(8194)) || chr(8195)) || chr(8196)) || chr(8197)) || chr(8198)) || chr(8199)) || chr(8200)) || chr(8201)) || chr(8202)) || chr(8232)) || chr(8233)) || chr(8239)) || chr(8287)) || chr(12288)))) > 0)))
+ "Equipments"            | CK_Equipment_Required                         | CHECK (((length(btrim("Name", ((((((((((((((((((((((((chr(9) || chr(10)) || chr(11)) || chr(12)) || chr(13)) || chr(32)) || chr(133)) || chr(160)) || chr(5760)) || chr(8192)) || chr(8193)) || chr(8194)) || chr(8195)) || chr(8196)) || chr(8197)) || chr(8198)) || chr(8199)) || chr(8200)) || chr(8201)) || chr(8202)) || chr(8232)) || chr(8233)) || chr(8239)) || chr(8287)) || chr(12288)))) > 0) AND (length(btrim("Identifier", ((((((((((((((((((((((((chr(9) || chr(10)) || chr(11)) || chr(12)) || chr(13)) || chr(32)) || chr(133)) || chr(160)) || chr(5760)) || chr(8192)) || chr(8193)) || chr(8194)) || chr(8195)) || chr(8196)) || chr(8197)) || chr(8198)) || chr(8199)) || chr(8200)) || chr(8201)) || chr(8202)) || chr(8232)) || chr(8233)) || chr(8239)) || chr(8287)) || chr(12288)))) > 0)))
+ "Equipments"            | Equipments_Id_not_null                        | NOT NULL "Id"
+ "Equipments"            | Equipments_Identifier_not_null                | NOT NULL "Identifier"
+ "Equipments"            | Equipments_IsAvailable_not_null               | NOT NULL "IsAvailable"
+ "Equipments"            | Equipments_Name_not_null                      | NOT NULL "Name"
+ "Equipments"            | Equipments_Version_not_null                   | NOT NULL "Version"
+ "Equipments"            | PK_Equipments                                 | PRIMARY KEY ("Id")
+ "Students"              | CK_Student_Contact                            | CHECK ((("Contact" IS NULL) OR (length(btrim("Contact", ((((((((((((((((((((((((chr(9) || chr(10)) || chr(11)) || chr(12)) || chr(13)) || chr(32)) || chr(133)) || chr(160)) || chr(5760)) || chr(8192)) || chr(8193)) || chr(8194)) || chr(8195)) || chr(8196)) || chr(8197)) || chr(8198)) || chr(8199)) || chr(8200)) || chr(8201)) || chr(8202)) || chr(8232)) || chr(8233)) || chr(8239)) || chr(8287)) || chr(12288)))) > 0)))
+ "Students"              | CK_Student_Required                           | CHECK (((length(btrim("Name", ((((((((((((((((((((((((chr(9) || chr(10)) || chr(11)) || chr(12)) || chr(13)) || chr(32)) || chr(133)) || chr(160)) || chr(5760)) || chr(8192)) || chr(8193)) || chr(8194)) || chr(8195)) || chr(8196)) || chr(8197)) || chr(8198)) || chr(8199)) || chr(8200)) || chr(8201)) || chr(8202)) || chr(8232)) || chr(8233)) || chr(8239)) || chr(8287)) || chr(12288)))) > 0) AND (length(btrim("StudentNumber", ((((((((((((((((((((((((chr(9) || chr(10)) || chr(11)) || chr(12)) || chr(13)) || chr(32)) || chr(133)) || chr(160)) || chr(5760)) || chr(8192)) || chr(8193)) || chr(8194)) || chr(8195)) || chr(8196)) || chr(8197)) || chr(8198)) || chr(8199)) || chr(8200)) || chr(8201)) || chr(8202)) || chr(8232)) || chr(8233)) || chr(8239)) || chr(8287)) || chr(12288)))) > 0)))
+ "Students"              | PK_Students                                   | PRIMARY KEY ("Id")
+ "Students"              | Students_CanBorrow_not_null                   | NOT NULL "CanBorrow"
+ "Students"              | Students_Id_not_null                          | NOT NULL "Id"
+ "Students"              | Students_Name_not_null                        | NOT NULL "Name"
+ "Students"              | Students_StudentNumber_not_null               | NOT NULL "StudentNumber"
+ "Students"              | Students_Version_not_null                     | NOT NULL "Version"
+ "__EFMigrationsHistory" | PK___EFMigrationsHistory                      | PRIMARY KEY ("MigrationId")
+ "__EFMigrationsHistory" | __EFMigrationsHistory_MigrationId_not_null    | NOT NULL "MigrationId"
+ "__EFMigrationsHistory" | __EFMigrationsHistory_ProductVersion_not_null | NOT NULL "ProductVersion"
+(29 rows)
+
+       tablename       |             indexname              |                                                               indexdef
+-----------------------+------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------
+ Borrowings            | IX_Borrowings_EquipmentId          | CREATE UNIQUE INDEX "IX_Borrowings_EquipmentId" ON public."Borrowings" USING btree ("EquipmentId") WHERE ("ActualReturnDate" IS NULL)
+ Borrowings            | IX_Borrowings_StudentId            | CREATE INDEX "IX_Borrowings_StudentId" ON public."Borrowings" USING btree ("StudentId")
+ Borrowings            | PK_Borrowings                      | CREATE UNIQUE INDEX "PK_Borrowings" ON public."Borrowings" USING btree ("Id")
+ Equipments            | IX_Equipments_NormalizedIdentifier | CREATE UNIQUE INDEX "IX_Equipments_NormalizedIdentifier" ON public."Equipments" USING btree ("NormalizedIdentifier")
+ Equipments            | PK_Equipments                      | CREATE UNIQUE INDEX "PK_Equipments" ON public."Equipments" USING btree ("Id")
+ Students              | IX_Students_NormalizedNumber       | CREATE UNIQUE INDEX "IX_Students_NormalizedNumber" ON public."Students" USING btree ("NormalizedNumber")
+ Students              | PK_Students                        | CREATE UNIQUE INDEX "PK_Students" ON public."Students" USING btree ("Id")
+ __EFMigrationsHistory | PK___EFMigrationsHistory           | CREATE UNIQUE INDEX "PK___EFMigrationsHistory" ON public."__EFMigrationsHistory" USING btree ("MigrationId")
+(8 rows)
