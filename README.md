@@ -1,356 +1,97 @@
-# EquipmentBorrowing
+# Campus Equipment Borrowing - Laboratory Activity 4
 
-## 1. Requirements Analysis
+Avalonia desktop application for **Laboratory Staff / Equipment Custodians**, continuing Laboratories 1-3. Implements UC-01-09 and UC-12-16 with PostgreSQL persistence. [Earlier laboratory documentation](docs/labs-1-to-3.md) is retained as historical context; the PostgreSQL instructions below supersede its SQLite setup.
 
-### Actor
-**Student** – requests equipment and returns it when finished.
+## Prerequisites
 
-### Use Cases
+- .NET **10 SDK** and a compatible Visual Studio installation (Avalonia extension optional).
+- A local **PostgreSQL 18** server, or another PostgreSQL version supporting generated columns and partial indexes. Verification used PostgreSQL 18.
+- Git; `psql`/pgAdmin for database setup. No Docker, cloud account or paid service is needed.
+- NuGet access for restore. The solution pins Avalonia 12.1.2, CommunityToolkit.Mvvm 8.4.2, Npgsql provider 10.0.3 and EF Core 10.0.11.
 
-| Item | Description |
-|---|---|
-| **Use Case** | Borrow Equipment |
-| **Primary Actor** | Student |
-| **Preconditions** | Student exists, is allowed to borrow, and equipment is available. |
-| **Main Action** | Student requests an available equipment. |
-| **Expected Result** | A borrowing record is created and the equipment becomes unavailable. |
-| **Possible Failure** | Student is not allowed, equipment does not exist, equipment is unavailable, or the borrowing limit is reached. |
+## Local setup and execution
 
-| Item | Description |
-|---|---|
-| **Use Case** | Return Equipment |
-| **Primary Actor** | Student |
-| **Preconditions** | The student has an active borrowing. |
-| **Main Action** | Student returns the equipment. |
-| **Expected Result** | The borrowing is marked as returned and the equipment becomes available. |
-| **Possible Failure** | The borrowing does not exist or is already returned. |
+1. Clone this repository and open `EquipmentBorrowing.sln`.
+2. Create an empty database and a local login in pgAdmin, or use `psql` as your local PostgreSQL administrator:
 
-| Item | Description |
-|---|---|
-| **Use Case** | Find Available Equipment |
-| **Primary Actor** | Student |
-| **Preconditions** | Equipment records are available. |
-| **Main Action** | Student checks the available equipment. |
-| **Expected Result** | The system shows equipment that can be borrowed. |
-| **Possible Failure** | No equipment is currently available. |
+   ```sql
+   CREATE ROLE equipment_app LOGIN;
+   -- In psql, set its password interactively: \password equipment_app
+   CREATE DATABASE equipment_borrowing OWNER equipment_app;
+   ```
 
-### Domain Concepts
+3. Configure the connection **outside source control**. In PowerShell, set this for the current session, substituting your local login details:
 
-- **Student** – stores the student information and borrowing permission/limit.
-- **Equipment** – stores the equipment information and availability.
-- **Borrowing** – records who borrowed what, the dates, and the status.
-- **BorrowingStatus** – shows whether a borrowing is Active or Returned.
+   ```powershell
+   $env:EQUIPMENTBORROWING_CONNECTION = 'Host=localhost;Port=5432;Database=equipment_borrowing;Username=equipment_app'
+   ```
 
-The domain objects only handle their own data and state. Database work and user-interface work are kept outside the domain.
+   Use PostgreSQL's per-user `pgpass.conf` for the password (`%APPDATA%/postgresql/pgpass.conf` on Windows), or supply `Password=...` through your private environment configuration. Never commit a real connection string containing credentials. The fallback connection contains no password and targets `localhost / equipment_borrowing / postgres`.
 
-## 2. Solution Structure
+4. Restore, apply the committed migration, and build:
 
-- **Domain** – contains Student, Equipment, Borrowing, and BorrowingStatus.
-- **Application** – contains the borrowing service and repository interfaces.
-- **Infrastructure** – contains simple in-memory repositories.
-- **Tests** – runs a small success and failure demonstration.
+   ```powershell
+   dotnet restore
+   dotnet tool restore
+   dotnet ef database update --project src/EquipmentBorrowing.Infrastructure
+   dotnet build EquipmentBorrowing.sln
+   ```
 
-## 3. Dependency Direction
+   Migrations run explicitly with the Infrastructure design-time factory. Views and ViewModels never execute migrations. This is a **fresh PostgreSQL schema**; previous SQLite migrations remain inspectable in Git history. SQLite row transfer and simultaneous SQLite operation are outside the supplied Lab 4 scope. Existing `.db` files are not used by the application.
+
+5. Run the desktop application:
+
+   ```powershell
+   dotnet run --project src/EquipmentBorrowing.Desktop
+   ```
+
+   In Visual Studio, select **EquipmentBorrowing.Desktop** as the startup project. If using a session environment variable, launch Visual Studio from that configured shell so it inherits the variable. **Domain is a class library and cannot launch the application.**
+
+The initial migration inserts three fictional demonstration students (one restricted) and five available equipment items. Database-generated identity values are used. Seed insertion runs once through migration history, never as a startup reset; reapplying the migration preserves edits and loans. No personal data or credentials are supplied.
+
+## Staff workflows
+
+- **Equipment & Checkout:** locate by identifier/name, toggle available items, select an item to view its full active/returned history, register or edit descriptive fields. Select a student and a future expected return date to borrow one catalog item. For UC-06, add two or three different catalog items to the checkout list and submit them together. Duplicate selections receive explicit feedback.
+- **Students & History:** locate by name/institutional number, select to load related history, register a new student, edit information, permit or restrict borrowing. `New student` clears the edit selection; saving a selected student updates that same internal identity. Blank optional contact clears it.
+- **Borrowings & Returns:** initially shows active records. Search by student name, institutional number or equipment name; combine status and date sorting, choose direction, or clear criteria to show all. Select a record and press **Confirm return**. History is retained. Repeating a return is rejected.
+- **Refresh / Reconnect** reloads current PostgreSQL state. Loading indicators keep asynchronous work observable. Empty result counts/messages differ from database errors. Histories replace their results on selection; an older request cannot overwrite a newer selection.
+
+All checkout and return calendar dates use **Asia/Manila**, stored as PostgreSQL `date` / .NET `DateOnly`. A due date must be later than checkout. An early return is permitted. At most **three active items** are allowed per student, including items already on loan.
+
+## Architecture and integrity decisions
 
 ```text
-Tests
-  ↓
-Application → Domain
-  ↓
-Infrastructure → Application → Domain
+Avalonia XAML View -> CommunityToolkit ViewModel -> WorkflowService (Application)
+    -> IWorkflowRepository / IWorkflowSession -> PostgreSQL EF Core repository -> PostgreSQL
 ```
 
-The application uses interfaces, so it does not depend on a database implementation.
+Domain entities retain stable identities and explicit update/return transitions. The Application service owns eligibility, field validation, borrowing limits, dates, and allowed operations. Infrastructure owns SQL, mappings, EF migrations, queries, and transaction mechanics. The composition root (`App.axaml.cs`) registers the factory, repository, service and ViewModel. No View or ViewModel references DbContext, SQL, connection configuration or migrations.
 
-## 4. Use Case Mapping
+`IDbContextFactory` creates and disposes **one context per operation**. Read operations use no tracking. A write gets one context and one transaction spanning current-state reads, business validation, all borrowing/availability changes, SaveChanges and commit. Singleton services retain only the thread-safe factory/repository, never a shared DbContext. Independent history loads can therefore overlap without concurrently using a context. The UI guards mutation commands while busy and generation-checks asynchronous master-detail results.
 
-**Actor:** Student  
-**Use Case:** Borrow Equipment  
-**Application Service:** BorrowEquipmentService  
-**Domain Objects Used:** Student, Equipment, Borrowing, BorrowingStatus  
-**Repository Interfaces Used:** IStudentRepository, IEquipmentRepository, IBorrowingRepository  
-**Infrastructure Implementations Used:** InMemoryStudentRepository, InMemoryEquipmentRepository, InMemoryBorrowingRepository
+For this small custodian deployment, writers acquire PostgreSQL `SHARE ROW EXCLUSIVE` locks on the three tables in a consistent order **before reading business state**, at the default Read Committed isolation level. This serializes app writes (including eligibility edits) while permitting ordinary readers. It prevents two app requests from exceeding the student limit or issuing stale availability, with a throughput tradeoff suitable for this laboratory. No automatic write retry is enabled. See PostgreSQL's [locking documentation](https://www.postgresql.org/docs/current/explicit-locking.html).
 
-## 5. Reflection
+PostgreSQL additionally enforces identity primary keys, restrictive foreign keys, nonblank required fields, normalized identifier uniqueness, valid dates, and a partial unique index on active equipment borrowings. Generated normalized identifiers apply PostgreSQL `lower` and trim the same Unicode whitespace set as .NET `String.Trim`; application uniqueness checks use the same database normalization. Case comparison follows the database collation. The three-item rule is enforced by the service under serialized transactions. Availability can only be changed through borrowing/return service workflows; management requests do not accept transaction fields. Version concurrency tokens reject stale descriptive/eligibility edits. [Schema and constraints](docs/database-diagram.md).
 
-**1. Why use a repository interface?**  
-It keeps the application code separate from the database or storage method.
+Known pre-commit failures dispose the uncommitted transaction and report failure. A transport error during commit can mean the server committed even though the client did not receive confirmation. The application reports **unknown outcome**, never claims rollback or success, and blocks further writes until a successful Refresh / Reconnect. Staff inspect the refreshed records before deciding whether to resubmit. Tests include a controlled post-commit acknowledgement failure and fresh readback; no fault injection is enabled in the production application.
 
-**2. What can stay unchanged if SQLite is added later?**  
-The domain models, application service, and repository interfaces can stay the same.
+## Verification
 
-**3. Which project would contain Avalonia Views later?**  
-A separate UI project would contain them.
+The console project is an integration acceptance runner, invoked using **dotnet run**, not `dotnet test`. It creates a unique database named `equipment_lab4_test_<guid>` and leaves it available for inspection. Configure a local test administrator with `CREATEDB`; never point fault demonstrations at shared data:
 
-**4. Should an Avalonia button directly execute database queries?**  
-No. It should call application logic instead.
-
-**5. What represents the business operation?**  
-`BorrowEquipmentService` performs the Borrow Equipment operation.
-
-## 6. How to Run
-
-### In Visual Studio
-
-1. Open `EquipmentBorrowing.sln`.
-2. In Solution Explorer, right-click **EquipmentBorrowing.Tests**.
-3. Choose **Set as Startup Project**.
-4. Press **Ctrl + F5**.
-
-The program should show one successful borrowing and one failure because the projector is unavailable.
-
-### Command Line
-
-From the `EquipmentBorrowing` folder:
-
-```text
-dotnet build
+```powershell
+$env:EQUIPMENTBORROWING_TEST_CONNECTION = 'Host=localhost;Port=5432;Database=postgres;Username=your_test_admin'
 dotnet run --project tests/EquipmentBorrowing.Tests
+# Use the exact generated name printed above, in a NEW process:
+dotnet run --project tests/EquipmentBorrowing.Tests -- --readback equipment_lab4_test_<guid>
 ```
 
-No database, Entity Framework Core, or graphical interface is used in this activity.
+The runner applies the real migration and checks persistent state using fresh contexts after every rejection. It covers registration, protected edits, eligibility, single/multiple issue, returns, relationship histories, combined search and sorting, database constraints, competing checkout, post-write rollback, offline recovery, unknown commit outcomes, and actual compiled XAML/ViewModel integration through Avalonia Headless. It never drops or resets an existing database. After inspecting it, the owner may remove **only the generated disposable test database** through pgAdmin.
 
-## Desktop Project (Laboratory Activity 2)
+See [recorded evidence and remaining manual demonstration steps](docs/verification.md), [acceptance traceability](docs/traceability.md), [use-case diagram and complete catalog](docs/use-cases.md), [fourteen-case suite](docs/use-case-suite.md), [supplied business rules](docs/business-rules.md), and [database readback queries](docs/database-queries.sql).
 
-`EquipmentBorrowing.Desktop` is the Avalonia presentation layer added on top of the Laboratory Activity 1
-architecture. It references `EquipmentBorrowing.Application` and `EquipmentBorrowing.Infrastructure`
-only and contains no domain or business logic. Its responsibilities are limited to displaying data,
-collecting input, holding presentation state (ViewModels), and invoking existing application services.
+## Submission and Git history
 
-## Updated Architecture
+Prior commits are preserved. Inspect development history with `git log --oneline --all` and changes with `git show <commit>`. The earlier migration and in-memory implementation can be inspected at commit `4ce4476` before this PostgreSQL continuation. Updated source, reproducible migration, acceptance runner and documentation are included in this repository.
 
-Avalonia View
-   |  binding / command
-   v
-ViewModel
-   |  application operation
-   v
-Application Service
-   |
-   +--> Domain
-   |
-   v
-Repository Interface
-   ^
-   |
-Infrastructure Implementation
-
-## Borrow Equipment Flow
-1. User selects a student, equipment item, and expected return date in `EquipmentView`.
-2. Pressing "Borrow Equipment" triggers `EquipmentViewModel.BorrowCommand`.
-3. The ViewModel performs presentation-only validation (required selections, valid future date).
-4. The ViewModel calls `BorrowEquipmentService.BorrowAsync(...)`.
-5. The service applies business rules (availability, borrowing limits, eligibility) using
-   repositories and domain entities, creates a new `Borrowing` with `Status = BorrowingStatus.Active`,
-   and returns a result.
-6. The ViewModel updates `StatusMessage` and refreshes the equipment collection.
-
-## Return Equipment Flow
-1. User selects an active borrowing in `BorrowingsView`.
-2. Pressing "Return Equipment" triggers `BorrowingsViewModel.ReturnCommand`.
-3. The ViewModel calls `ReturnEquipmentService.ReturnAsync(borrowingId)`.
-4. The service locates the borrowing by ID, checks that its `Status` is `BorrowingStatus.Active`
-   (rejecting the request otherwise), calls `borrowing.MarkReturned()` to flip its status to
-   `BorrowingStatus.Returned`, and marks the related equipment available again via the repositories.
-5. The ViewModel updates `StatusMessage` and reloads both the borrowings and equipment lists.
-6. When `BorrowingsViewModel.LoadAsync()` re-fetches active borrowings,
-   `InMemoryBorrowingRepository.GetActiveAsync()` joins each `Borrowing` against
-   `IEquipmentRepository`/`IStudentRepository` by ID to populate the read-only display fields
-   `EquipmentName` and `StudentName` used by the view — this join is presentation shaping only and
-   does not affect any business decision.
-
-## Architectural Reflection
-
-1. **Why should the View not call a repository directly?**
-   It would bypass presentation state and let the UI reach data access without going through the
-   business rules in Application/Domain, breaking separation of concerns and making rule enforcement
-   inconsistent.
-
-2. **Why should business rules not be implemented in the ViewModel?**
-   They would then be duplicated or diverge between the UI and any other consumer of the Application
-   layer, and would be untestable without spinning up the UI framework.
-
-3. **What is the responsibility of the ViewModel?**
-   To hold presentation state, expose observable collections/properties for binding, define commands,
-   perform lightweight input validation, and delegate actual operations to application services.
-
-4. **Why can the existing Application layer work without knowing Avalonia is being used?**
-   Because it depends only on abstractions (repository interfaces) and plain C# types, with no reference
-   to any UI framework, so it can be reused by a desktop app, a web app, or tests unchanged.
-
-5. **What advantage is gained from registering dependencies in one composition point?**
-   All wiring decisions live in a single place (`App.axaml.cs`), so the rest of the app depends only on
-   interfaces, and swapping an implementation later requires changing one file, not the whole codebase.
-   This also matters concretely here: `InMemoryBorrowingRepository` itself now depends on
-   `IEquipmentRepository` and `IStudentRepository` to build display names, so the composition root is
-   what guarantees those two are registered and resolvable before `IBorrowingRepository` is constructed.
-
-6. **If the in-memory repository were replaced by SQLite later, which parts should remain unchanged?**
-   Domain, Application services, repository interfaces, and the entire Desktop project (Views and
-   ViewModels) — only the Infrastructure implementations and the DI registration in `App.axaml.cs`
-   would change. The `EquipmentName`/`StudentName` join in `GetActiveAsync()` would also carry over
-   unchanged, since it only calls the repository interfaces, not any in-memory-specific detail.
-
-## Laboratory Activity 3 - Database Persistence & Entity Framework Core
-
-### 1. Relational Database Design
-
-#### Database Diagram
-The relational schema diagram is located in `docs/database-diagram.md`.
-
-#### Tables & Keys
-* **`Students`**: Stores student records.
-  * `Id` (Primary Key, Auto-increment)
-  * `Name` (Text, Required)
-  * `CanBorrow` (Boolean)
-  * `MaxActiveBorrowings` (Integer)
-* **`Equipments`**: Stores equipment catalog.
-  * `Id` (Primary Key, Auto-increment)
-  * `Name` (Text, Required)
-  * `IsAvailable` (Boolean)
-* **`Borrowings`**: Tracks equipment borrowing transactions.
-  * `Id` (Primary Key, Auto-increment)
-  * `StudentId` (Foreign Key $\rightarrow$ `Students.Id`)
-  * `EquipmentId` (Foreign Key $\rightarrow$ `Equipments.Id`)
-  * `DateBorrowed` (DateTime)
-  * `ExpectedReturnDate` (DateTime)
-  * `ActualReturnDate` (DateTime, Nullable)
-
-#### Relationships & Constraints
-* **`Students` to `Borrowings`**: One-to-Many ($1:N$).
-* **`Equipments` to `Borrowings`**: One-to-Many ($1:N$).
-* **Constraints**: Foreign keys enforce referential integrity between `Borrowings`, `Students`, and `Equipments`.
-
----
-
-### 2. SQLite and EF Core Integration
-
-SQLite and Entity Framework Core were added to `EquipmentBorrowing.Infrastructure` and `EquipmentBorrowing.Desktop` via the following NuGet packages[cite: 8, 9]:
-* `Microsoft.EntityFrameworkCore.Sqlite` (v8.0.0)
-* `Microsoft.EntityFrameworkCore.Design` (v8.0.0)[cite: 8, 9]
-
-In `App.axaml.cs`, the database file `app.db` is configured dynamically targeting `AppContext.BaseDirectory` so that it persists in the executable directory:
-
-csharp
-var dbPath = Path.Combine(AppContext.BaseDirectory, "app.db");
-
-services.AddDbContext<EquipmentBorrowingDbContext>(options =>
-    options.UseSqlite($"Data Source={dbPath}"));
-3. DbContext Responsibility
-EquipmentBorrowingDbContext (located in EquipmentBorrowing.Infrastructure.Persistence) acts as the primary gateway to the SQLite database:   
-PNG
-
-Entity Mapping: Exposes DbSet<Student>, DbSet<Equipment>, and DbSet<Borrowing> properties.   
-PNG
-
-Configuration: Configures table constraints, primary/foreign keys, and initial seed data in OnModelCreating() via entity configuration classes in Persistence/Configurations/.   
-PNG
-
-Change Tracking & Execution: Translates LINQ operations into SQL queries and commits changes upon calling SaveChangesAsync().
-
-4. Repository Transition
-The architecture successfully transitioned from volatile in-memory collections to SQLite database persistence without changing UI or Domain logic:
-
-In-Memory Architecture (Laboratory Activity 2)
-Plaintext
-IBorrowingRepository / IEquipmentRepository / IStudentRepository
-        ↓
-InMemoryBorrowingRepository / InMemoryEquipmentRepository / InMemoryStudentRepository
-        ↓
-In-Memory C# List<T> (Data lost when app closes)
-Persistent Architecture (Laboratory Activity 3)
-Plaintext
-IBorrowingRepository / IEquipmentRepository / IStudentRepository
-        ↓
-EfBorrowingRepository / EfEquipmentRepository / EfStudentRepository
-        ↓
-EquipmentBorrowingDbContext (via Entity Framework Core 8.0)
-        ↓
-SQLite Database (app.db stored on disk)
-Key Benefit: ViewModels and Domain Services depend solely on repository interfaces (IBorrowingRepository, IEquipmentRepository, IStudentRepository). Changing the concrete registrations in App.axaml.cs switched the storage mechanism across the entire desktop application seamlessly.   
-PNG
-
-5. Migration Process
-Creating the Initial Migration:
-Using EquipmentBorrowingDbContextFactory for design-time execution, the migration was generated using:   
-PNG
-
-PowerShell
-dotnet ef migrations add InitialCreate --project src/EquipmentBorrowing.Infrastructure --startup-project src/EquipmentBorrowing.Desktop
-This produced 20261003090541_InitialCreate.cs and EquipmentBorrowingDbContextModelSnapshot.cs inside EquipmentBorrowing.Infrastructure/Migrations/.   
-PNG
-
-Applying Migrations at Application Startup:
-In App.axaml.cs, automatic schema migration is executed when the app initializes:
-
-C#
-using (var scope = Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<EquipmentBorrowingDbContext>();
-    dbContext.Database.Migrate();
-}
-6. Generated SQL Examples
-Querying Available Equipment
-LINQ (C#):
-
-C#
-var availableEquipment = await _dbContext.Equipments
-    .Where(e => e.IsAvailable)
-    .ToListAsync();
-Generated SQL (SQLite):
-
-SQL
-SELECT "e"."Id", "e"."IsAvailable", "e"."Name"
-FROM "Equipments" AS "e"
-WHERE "e"."IsAvailable" = 1;
-Fetching Active Borrowings
-LINQ (C#):
-
-C#
-var activeBorrowings = await _dbContext.Borrowings
-    .Include(b => b.Equipment)
-    .Include(b => b.Student)
-    .Where(b => b.ActualReturnDate == null)
-    .ToListAsync();
-Generated SQL (SQLite):
-
-SQL
-SELECT "b"."Id", "b"."ActualReturnDate", "b"."DateBorrowed", "b"."EquipmentId", "b"."ExpectedReturnDate", "b"."StudentId"
-FROM "Borrowings" AS "b"
-INNER JOIN "Equipments" AS "e" ON "b"."EquipmentId" = "e"."Id"
-INNER JOIN "Students" AS "s" ON "b"."StudentId" = "s"."Id"
-WHERE "b"."ActualReturnDate" IS NULL;
-7. Persistence Demonstration
-Verification was completed through the following steps:
-
-Launched EquipmentBorrowing.Desktop via Visual Studio / dotnet run[cite: 8].
-
-Created a new equipment borrowing transaction via the application UI.
-
-Closed the application completely.
-
-Relaunched the application.
-
-Confirmed that the borrowing record and updated equipment availability status loaded directly from app.db on disk.
-
-8. Architectural Reflection
-Why did the application not need to be completely rewritten when SQLite was introduced?
-Because the system follows Dependency Inversion. The UI and Application Services depend on repository interfaces (IBorrowingRepository, etc.) rather than concrete storage implementations[cite: 9].
-
-Why should the ViewModel not use DbContext directly?
-To enforce Separation of Concerns. ViewModels handle presentation logic and UI state; exposing DbContext directly to ViewModels tightly couples the UI to EF Core and breaks unit testability.
-
-What responsibility does the repository implementation now perform?
-It translates domain operations into EF Core LINQ queries, manages DbContext interaction, and converts persistence models to domain entities.
-
-What is the purpose of an EF Core migration?
-It allows incremental schema updates over time while preserving existing data stored in the database.
-
-Why are foreign keys important in the borrowing database?
-They guarantee referential integrity, ensuring that borrowing transactions cannot reference non-existent students or equipment items.
-
-Why can a read-only query benefit from AsNoTracking()?
-It instructs EF Core to skip tracking entity changes in memory, reducing memory overhead and improving query performance for display-only views.
-
-What would happen to the rest of the application if the SQLite implementation were replaced later by another database provider?
-No changes would be required in the UI, ViewModels, or Domain logic. Only the DbContext provider setup and package registration in App.axaml.cs would change.
+The laboratory also requires each member's individual submission to identify their full name and student ID (and their partner's, if working as a confirmed pair). Supply those in the **private submission comment**, as permitted by the handout; they are intentionally not invented or placed in this public repository. Deferred Lab 5 and future cases are classified in the catalog and are not required functionality here.
