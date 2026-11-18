@@ -17,8 +17,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EquipmentBorrowing.Desktop"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{DA8F517D-0B69-4A04-A275-EC8CE63334A7}"
 	ProjectSection(SolutionItems) = preProject
-		database-diagram.md = database-diagram.md
-		database-queries.sql = database-queries.sql
+		README.md = README.md
+		docs\use-cases.md = docs\use-cases.md
+		docs\use-case-suite.md = docs\use-case-suite.md
+		docs\traceability.md = docs\traceability.md
+		docs\verification.md = docs\verification.md
+		docs\database-diagram.md = docs\database-diagram.md
+		docs\database-queries.sql = docs\database-queries.sql
 	EndProjectSection
 EndProject
 Global
