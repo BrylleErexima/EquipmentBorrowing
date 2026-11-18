@@ -1,46 +1,25 @@
 namespace EquipmentBorrowing.Domain;
-
 public class Borrowing
 {
     public int Id { get; private set; }
     public int StudentId { get; private set; }
     public int EquipmentId { get; private set; }
-    public string StudentName { get; private set; } = string.Empty;
-    public string EquipmentName { get; private set; } = string.Empty;
-    public DateTime DateBorrowed { get; private set; }
-    public DateTime ExpectedReturnDate { get; private set; }
-    public DateTime? ActualReturnDate { get; set; }
-    public BorrowingStatus Status { get; private set; } = BorrowingStatus.Active;
-
-    // Navigation properties for EF Core
-    public Student? Student { get; private set; }
-    public Equipment? Equipment { get; private set; }
-
-    // Required by EF Core for materialization
+    public DateOnly DateBorrowed { get; private set; }
+    public DateOnly ExpectedReturnDate { get; private set; }
+    public DateOnly? ActualReturnDate { get; private set; }
+    public BorrowingStatus Status => ActualReturnDate is null ? BorrowingStatus.Active : BorrowingStatus.Returned;
+    public Student Student { get; private set; } = null!;
+    public Equipment Equipment { get; private set; } = null!;
     private Borrowing() { }
-
-    public Borrowing(
-        int id,
-        int studentId,
-        int equipmentId,
-        string studentName,
-        string equipmentName,
-        DateTime dateBorrowed,
-        DateTime expectedReturnDate)
+    public Borrowing(int studentId, int equipmentId, DateOnly checkout, DateOnly expected)
     {
-        Id = id;
-        StudentId = studentId;
-        EquipmentId = equipmentId;
-        StudentName = studentName;
-        EquipmentName = equipmentName;
-        DateBorrowed = dateBorrowed;
-        ExpectedReturnDate = expectedReturnDate;
-        Status = BorrowingStatus.Active;
+        if (expected <= checkout) throw new ArgumentException("Expected return must be later than checkout.");
+        StudentId = studentId; EquipmentId = equipmentId; DateBorrowed = checkout; ExpectedReturnDate = expected;
     }
-
-    public void MarkReturned(DateTime returnDate)
+    public void MarkReturned(DateOnly today)
     {
-        ActualReturnDate = returnDate;
-        Status = BorrowingStatus.Returned;
+        if (ActualReturnDate is not null || today < DateBorrowed) throw new InvalidOperationException("Invalid return transition.");
+        ActualReturnDate = today;
     }
+    public override string ToString() => $"#{Id} · {Student} · {Equipment.Identifier} · {Equipment.Name} | Checkout {DateBorrowed:yyyy-MM-dd} | Due {ExpectedReturnDate:yyyy-MM-dd} | {Status} | Returned {ActualReturnDate:yyyy-MM-dd}";
 }

@@ -1,20 +1,19 @@
 namespace EquipmentBorrowing.Domain;
-
 public class Student
 {
     public int Id { get; private set; }
-    public string Name { get; private set; } = string.Empty;
-    public bool CanBorrow { get; set; }
-    public int MaxActiveBorrowings { get; private set; }
-
-    // Required by EF Core
+    public string Name { get; private set; } = "";
+    public string StudentNumber { get; private set; } = "";
+    public string? Contact { get; private set; }
+    public bool CanBorrow { get; private set; } = true;
+    public int Version { get; private set; }
     private Student() { }
-
-    public Student(int id, string name, bool canBorrow = true, int maxActiveBorrowings = 2)
+    public Student(string number, string name, string? contact = null) => Update(number, name, contact);
+    public void Update(string number, string name, string? contact)
     {
-        Id = id;
-        Name = name;
-        CanBorrow = canBorrow;
-        MaxActiveBorrowings = maxActiveBorrowings;
+        StudentNumber = number.Trim(); Name = name.Trim();
+        Contact = string.IsNullOrWhiteSpace(contact) ? null : contact.Trim(); Version++;
     }
+    public void SetEligibility(bool allowed) { CanBorrow = allowed; Version++; }
+    public override string ToString() => $"{StudentNumber} · {Name} ({(CanBorrow ? "Eligible" : "Restricted")})";
 }
