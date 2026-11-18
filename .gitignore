@@ -3,3 +3,12 @@
 **/obj/
 *.user
 *.suo
+
+# Local runtime data and private configuration
+*.db
+*.db-shm
+*.db-wal
+.env
+.env.*
+appsettings.Local.json
+artifacts/
