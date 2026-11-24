@@ -4,13 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using EquipmentBorrowing.Application.Interfaces;
-using EquipmentBorrowing.Application.Services;
-using EquipmentBorrowing.Domain;
+using EquipmentBorrowing.Contracts;
+using EquipmentBorrowing.Desktop.Services;
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
 
-public partial class MainWindowViewModel(WorkflowService service) : ObservableObject
+public partial class MainWindowViewModel(WorkflowApiClient service) : ObservableObject
 {
     public ObservableCollection<Student> Students { get; } = new();
     public ObservableCollection<Equipment> Equipment { get; } = new();
@@ -27,7 +26,7 @@ public partial class MainWindowViewModel(WorkflowService service) : ObservableOb
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(CanInteract))] private bool isBusy;
     public bool CanInteract => !IsBusy;
-    [ObservableProperty] private string message = "Refresh to connect to PostgreSQL.";
+    [ObservableProperty] private string message = "Refresh to connect to the API.";
     [ObservableProperty] private string studentHistoryMessage = "Select a student to view history.";
     [ObservableProperty] private string equipmentHistoryMessage = "Select an item to view history.";
     [ObservableProperty] private bool isStudentHistoryLoading;
@@ -49,8 +48,8 @@ public partial class MainWindowViewModel(WorkflowService service) : ObservableOb
     [ObservableProperty] private string borrowingSearch = "";
     [ObservableProperty] private StatusFilter status = StatusFilter.Active;
     [ObservableProperty] private BorrowingSort sort = BorrowingSort.CheckoutDate;
-    [ObservableProperty] private bool descending = true;
-    [ObservableProperty] private DateTime? expectedReturnDate = WorkflowService.Today.AddDays(3).ToDateTime(TimeOnly.MinValue);
+    [ObservableProperty] private bool descending = false;
+    [ObservableProperty] private DateTime? expectedReturnDate = WorkflowApiClient.Today.AddDays(3).ToDateTime(TimeOnly.MinValue);
 
     partial void OnSelectedStudentChanged(Student? value)
     {
@@ -81,7 +80,7 @@ public partial class MainWindowViewModel(WorkflowService service) : ObservableOb
     });
     private async Task ReloadAsync()
     {
-        // Sequential within this workflow; each service call uses a fresh context.
+        // Asynchronous HTTP requests; the desktop has no database dependency.
         var studentId = SelectedStudent?.Id; var equipmentId = SelectedEquipment?.Id; var checkoutId = CheckoutStudent?.Id;
         allStudents = (await service.StudentsAsync()).ToArray();
         allEquipment = (await service.EquipmentAsync()).ToArray();
@@ -96,8 +95,8 @@ public partial class MainWindowViewModel(WorkflowService service) : ObservableOb
         if (IsBusy) return;
         IsBusy = true; Message = "Loading…";
         try { await action(); }
-        catch (PersistenceException e) { Message = e.Message; ClearStaleLists(); }
-        catch (WorkflowException e) { Message = e.Message; }
+        catch (ApiClientException e) { Message = e.Message; ClearStaleLists(); }
+
         catch (Exception) { Message = "The operation could not complete. Refresh and retry."; }
         finally { IsBusy = false; }
     }
@@ -107,7 +106,7 @@ public partial class MainWindowViewModel(WorkflowService service) : ObservableOb
         Students.Clear(); Equipment.Clear(); Borrowings.Clear();
         SelectedStudent = null; SelectedEquipment = null; CheckoutStudent = null; SelectedBorrowing = null;
     }
-    private async Task Mutate(Func<Task<OperationResult>> operation)
+    private async Task Mutate(Func<Task<ClientResult>> operation)
     {
         await Run(async () =>
         {
@@ -117,19 +116,19 @@ public partial class MainWindowViewModel(WorkflowService service) : ObservableOb
             if (result.OutcomeUnknown) { Message = result.Message; return; }
             if (result.Success) Cart.Clear();
             try { await ReloadAsync(); Message = result.Message; }
-            catch (PersistenceException e) { ClearStaleLists(); Message = result.Message + " Readback failed: " + e.Message; }
+            catch (ApiClientException e) { ClearStaleLists(); Message = result.Message + " Readback failed: " + e.Message; }
         });
     }
     [RelayCommand] private void NewStudent() { SelectedStudent = null; StudentNumber = StudentName = Contact = ""; }
     [RelayCommand] private void NewEquipment() { SelectedEquipment = null; Identifier = EquipmentName = Description = ""; }
-    [RelayCommand] private Task SaveStudentAsync() => Mutate(() => service.SaveStudentAsync(SelectedStudent?.Id, SelectedStudent?.Version ?? 0, StudentNumber, StudentName, Contact));
-    [RelayCommand] private Task SaveEquipmentAsync() => Mutate(() => service.SaveEquipmentAsync(SelectedEquipment?.Id, SelectedEquipment?.Version ?? 0, Identifier, EquipmentName, Description));
+    [RelayCommand] private Task SaveStudentAsync() => Mutate(() => service.SaveStudentAsync(SelectedStudent?.Id, StudentNumber, StudentName, Contact));
+    [RelayCommand] private Task SaveEquipmentAsync() => Mutate(() => service.SaveEquipmentAsync(SelectedEquipment?.Id, Identifier, EquipmentName, Description));
     [RelayCommand] private Task PermitAsync() => EligibilityAsync(true);
     [RelayCommand] private Task RestrictAsync() => EligibilityAsync(false);
     private Task EligibilityAsync(bool allowed)
     {
         if (SelectedStudent is null) { Message = "Select a student first."; return Task.CompletedTask; }
-        return Mutate(() => service.SetEligibilityAsync(SelectedStudent.Id, SelectedStudent.Version, allowed));
+        return Mutate(() => service.SetEligibilityAsync(SelectedStudent.Id, allowed));
     }
     [RelayCommand] private void AddToCart()
     {
@@ -162,7 +161,7 @@ public partial class MainWindowViewModel(WorkflowService service) : ObservableOb
     });
     [RelayCommand] private Task ClearCriteriaAsync()
     {
-        BorrowingSearch = ""; Status = StatusFilter.All; Sort = BorrowingSort.CheckoutDate; Descending = true;
+        BorrowingSearch = ""; Status = StatusFilter.All; Sort = BorrowingSort.CheckoutDate; Descending = false;
         return SearchBorrowingsAsync();
     }
     [RelayCommand] private async Task LoadStudentHistoryAsync()
@@ -177,7 +176,7 @@ public partial class MainWindowViewModel(WorkflowService service) : ObservableOb
             if (request != studentRequest) return;
             Replace(StudentHistory, rows); StudentHistoryMessage = rows.Count == 0 ? "No borrowing history for this student." : $"{rows.Count} student history record(s).";
         }
-        catch (Exception e) { if (request == studentRequest) StudentHistoryMessage = e is PersistenceException or WorkflowException ? e.Message : "History load failed. Retry."; }
+        catch (Exception e) { if (request == studentRequest) StudentHistoryMessage = e is ApiClientException ? e.Message : "History load failed. Retry."; }
         finally { if (request == studentRequest) IsStudentHistoryLoading = false; }
     }
     [RelayCommand] private async Task LoadEquipmentHistoryAsync()
@@ -192,7 +191,7 @@ public partial class MainWindowViewModel(WorkflowService service) : ObservableOb
             if (request != equipmentRequest) return;
             Replace(EquipmentHistory, rows); EquipmentHistoryMessage = rows.Count == 0 ? "No borrowing history for this item." : $"{rows.Count} equipment history record(s).";
         }
-        catch (Exception e) { if (request == equipmentRequest) EquipmentHistoryMessage = e is PersistenceException or WorkflowException ? e.Message : "History load failed. Retry."; }
+        catch (Exception e) { if (request == equipmentRequest) EquipmentHistoryMessage = e is ApiClientException ? e.Message : "History load failed. Retry."; }
         finally { if (request == equipmentRequest) IsEquipmentHistoryLoading = false; }
     }
 }

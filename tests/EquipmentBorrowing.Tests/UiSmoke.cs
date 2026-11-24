@@ -1,19 +1,34 @@
 using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Threading;
-using EquipmentBorrowing.Application.Interfaces;
+using EquipmentBorrowing.Api;
+using EquipmentBorrowing.Desktop.Services;
+using Microsoft.Extensions.DependencyInjection;
+using System.Net;
+using System.Net.Http.Json;
 using EquipmentBorrowing.Application.Services;
 using EquipmentBorrowing.Desktop.ViewModels;
 using EquipmentBorrowing.Desktop.Views;
 
 static class UiSmoke
 {
-    // Run the actual compiled XAML and ViewModel commands on Avalonia's dispatcher.
+    // Retain the Lab 4 runner, exercising the updated desktop through a real HTTP boundary.
     public static void Run(WorkflowService service)
     {
-        AppBuilder.Configure<EquipmentBorrowing.Desktop.App>()
-            .UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
-        using var stop = new CancellationTokenSource();
+        var app = ApiHost.Create(["--urls", "http://127.0.0.1:0", "--Logging:LogLevel:Default", "Warning"], services => services.AddSingleton(service));
+        app.StartAsync().GetAwaiter().GetResult();
+        try
+        {
+            using var http = new HttpClient { BaseAddress = new Uri(app.Urls.Single() + "/api/v1/") };
+            Run(new WorkflowApiClient(http), "LAB-101", "Edited Laptop");
+        }
+        finally { app.StopAsync().GetAwaiter().GetResult(); app.DisposeAsync().AsTask().GetAwaiter().GetResult(); }
+    }
+    // Run the actual compiled XAML and ViewModel commands on Avalonia's dispatcher.
+    public static void Run(WorkflowApiClient service, string studentNumber = "ST-100", string equipmentName = "Camera", Func<Task>? independentChange = null)
+    {
+        EnsureUi();
+        using var completed = new ManualResetEventSlim();
         Exception? error = null;
         Dispatcher.UIThread.Post(async () =>
         {
@@ -29,10 +44,10 @@ static class UiSmoke
                 vm.EquipmentSearch = "no-matches-xyz";
                 if (vm.Equipment.Count != 0) throw new Exception("Catalog empty filter failed.");
                 vm.EquipmentSearch = ""; vm.AvailableOnly = false;
-                vm.SelectedStudent = vm.Students.First(x => x.StudentNumber == "LAB-101");
+                vm.SelectedStudent = vm.Students.First(x => x.StudentNumber == studentNumber);
                 await vm.LoadStudentHistoryCommand.ExecuteAsync(null);
                 if (vm.StudentHistory.Count == 0) throw new Exception("Student master-detail did not load.");
-                vm.SelectedEquipment = vm.Equipment.First(x => x.Name == "Edited Laptop");
+                vm.SelectedEquipment = vm.Equipment.First(x => x.Name == equipmentName);
                 await vm.LoadEquipmentHistoryCommand.ExecuteAsync(null);
                 if (vm.EquipmentHistory.Count == 0) throw new Exception("Equipment master-detail did not load.");
                 if (Environment.GetEnvironmentVariable("EQUIPMENTBORROWING_UI_CAPTURE") is string capturePath)
@@ -80,8 +95,9 @@ static class UiSmoke
                 vm.SelectedStudent = vm.Students.Single(x => x.StudentNumber == "UI-001");
                 await vm.LoadStudentHistoryCommand.ExecuteAsync(null);
                 if (vm.StudentHistory.Count != 3) throw new Exception("UI history did not preserve return.");
-                var unknownRepository = new UnknownRepository();
-                var uncertainVm = new MainWindowViewModel(new WorkflowService(unknownRepository));
+                if (independentChange is not null) { await independentChange(); await vm.RefreshCommand.ExecuteAsync(null); if (!vm.Equipment.Any(x => x.Name == "Independent HTTP edit")) throw new Exception("Independent edit did not refresh."); }
+                var unknownRepository = new UnknownHandler();
+                var uncertainVm = new MainWindowViewModel(new WorkflowApiClient(new HttpClient(unknownRepository) { BaseAddress = new Uri("http://test/api/v1/") }));
                 uncertainVm.StudentNumber = "X"; uncertainVm.StudentName = "Name";
                 await uncertainVm.SaveStudentCommand.ExecuteAsync(null);
                 await uncertainVm.SaveStudentCommand.ExecuteAsync(null);
@@ -89,30 +105,83 @@ static class UiSmoke
                 await uncertainVm.RefreshCommand.ExecuteAsync(null);
                 await uncertainVm.SaveStudentCommand.ExecuteAsync(null);
                 if (unknownRepository.Writes != 2) throw new Exception("UI refresh did not unblock staff decision.");
-                var offline = new MainWindowViewModel(new WorkflowService(new OfflineRepository()));
+                var offline = new MainWindowViewModel(new WorkflowApiClient(new HttpClient(new OfflineHandler()) { BaseAddress = new Uri("http://test/api/v1/") }));
                 await offline.RefreshCommand.ExecuteAsync(null);
-                if (!offline.Message.Contains("Database load failed") || offline.IsBusy) throw new Exception("UI error state incorrect.");
+                if (!offline.Message.Contains("no HTTP response") || offline.IsBusy) throw new Exception("UI error state incorrect.");
                 window.Close();
                 Console.WriteLine("PASS: A01-A16/A18 headless window / compiled XAML, all fourteen workflow command routes, history, empty/error states and unknown-outcome retry gate");
             }
             catch (Exception e) { error = e; }
-            finally { stop.Cancel(); }
+            finally { completed.Set(); }
         });
-        Dispatcher.UIThread.MainLoop(stop.Token);
+        completed.Wait();
         if (error is not null) throw new Exception("UI smoke failed", error);
     }
-    private sealed class OfflineRepository : IWorkflowRepository
+    private static readonly object UiLock = new();
+    private static bool initialized;
+    private static void EnsureUi()
     {
-        public Task<T> ReadAsync<T>(Func<IWorkflowSession, Task<T>> action) => throw new PersistenceException("Database load failed. Refresh and retry.");
-        public Task<T> WriteAsync<T>(Func<IWorkflowSession, Task<T>> action) => throw new PersistenceException("Database write failed.");
+        lock (UiLock)
+        {
+            if (initialized) return;
+            using var ready = new ManualResetEventSlim();
+            Exception? failure = null;
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    AppBuilder.Configure<EquipmentBorrowing.Desktop.App>()
+                        .UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
+                }
+                catch (Exception e) { failure = e; }
+                finally { ready.Set(); }
+                if (failure is null) Dispatcher.UIThread.MainLoop(CancellationToken.None);
+            }) { IsBackground = true, Name = "Lab acceptance Avalonia dispatcher" };
+            thread.Start(); ready.Wait();
+            if (failure is not null) throw failure;
+            initialized = true;
+        }
     }
-    private sealed class UnknownRepository : IWorkflowRepository
+    public static void VerifyFeedback(WorkflowApiClient client, string expected)
+    {
+        EnsureUi();
+        using var completed = new ManualResetEventSlim();
+        Exception? error = null;
+        Dispatcher.UIThread.Post(async () =>
+        {
+            var window = new MainWindow();
+            try
+            {
+                var vm = new MainWindowViewModel(client); window.DataContext = vm; window.Show();
+                var loading = vm.RefreshCommand.ExecuteAsync(null);
+                if (!loading.IsCompleted && !vm.IsBusy) throw new Exception("Loading state missing.");
+                await loading;
+                if (!vm.Message.Contains(expected) || vm.IsBusy) throw new Exception("Incorrect UI failure feedback: " + vm.Message);
+                Console.WriteLine("UI observed feedback: " + vm.Message);
+                if (Environment.GetEnvironmentVariable("EQUIPMENTBORROWING_UI_CAPTURE") is string path)
+                {
+                    window.UpdateLayout(); using var frame = window.CaptureRenderedFrame();
+                    frame?.Save(Path.Combine(Path.GetDirectoryName(path)!, expected == "HTTP 500" ? "ui-server-error.png" : "ui-unreachable.png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
+                }
+            }
+            catch (Exception e) { error = e; }
+            finally { window.Close(); completed.Set(); }
+        });
+        completed.Wait();
+        if (error is not null) throw error;
+    }
+    private sealed class OfflineHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token) => throw new HttpRequestException("Controlled transport failure");
+    }
+    private sealed class UnknownHandler : HttpMessageHandler
     {
         public int Writes { get; private set; }
-        public Task<T> ReadAsync<T>(Func<IWorkflowSession, Task<T>> action) => Task.FromResult((T)Activator.CreateInstance(typeof(T))!);
-        public Task<T> WriteAsync<T>(Func<IWorkflowSession, Task<T>> action)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
         {
-            Writes++; throw new PersistenceException("Commit outcome is unknown. Refresh before deciding to retry.", true);
+            if (request.Method == HttpMethod.Get) return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("[]", System.Text.Encoding.UTF8, "application/json") });
+            Writes++;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError) { Content = JsonContent.Create(new EquipmentBorrowing.Contracts.ApiError("outcome_unknown", "Commit outcome is unknown. Refresh before deciding to retry.")) });
         }
     }
 }

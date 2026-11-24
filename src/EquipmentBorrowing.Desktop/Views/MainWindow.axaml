@@ -1,5 +1,5 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels" xmlns:domain="using:EquipmentBorrowing.Domain" x:Class="EquipmentBorrowing.Desktop.Views.MainWindow"
+ xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels" xmlns:domain="using:EquipmentBorrowing.Contracts" x:Class="EquipmentBorrowing.Desktop.Views.MainWindow"
  x:DataType="vm:MainWindowViewModel" Title="Campus Equipment Borrowing | Staff" Width="1280" Height="850" MinWidth="1000" MinHeight="680">
  <Window.DataTemplates>
   <DataTemplate DataType="domain:Borrowing" x:DataType="domain:Borrowing">
