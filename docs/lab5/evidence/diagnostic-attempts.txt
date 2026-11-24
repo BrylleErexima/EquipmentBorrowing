@@ -1,0 +1,23 @@
+Attempt 1: T01–T06 passed; the headless UI command workflow passed, then the console runner stalled awaiting fresh database readback after the UI dispatcher loop ended. The run was interrupted.
+UTC 2026-11-24T05:54:24.3547629+00:00; local Asia/Manila date 2026-11-24; database equipment_lab5_test_05415fa23a004ae6b73b8fd2a1992c02; .NET 10.0.11; OS Microsoft Windows NT 10.0.26300.0
+PASS T01
+PASS T02
+PASS T03
+PASS T04
+PASS T05
+PASS T06
+PASS: A01-A16/A18 headless window / compiled XAML, all fourteen workflow command routes, history, empty/error states and unknown-outcome retry gate
+Attempt 2: resetting the synchronization context allowed progress to T08, but the subsequent UI check ran on a different thread.
+UTC 2026-11-24T05:55:42.9981510+00:00; local Asia/Manila date 2026-11-24; database equipment_lab5_test_70e243984c444dcaa767f83c0dfe2bff; .NET 10.0.11; OS Microsoft Windows NT 10.0.26300.0
+PASS T01
+PASS T02
+PASS T03
+PASS T04
+PASS T05
+PASS T06
+PASS T07 compiled UI command demonstration; capture path comes from EQUIPMENTBORROWING_UI_CAPTURE
+UI feedback: API connection failed: no HTTP response was received. Check the API address and that it is running, then refresh.
+dotnet : FAIL execution: The calling thread cannot access this object because a different thread owns it.
+    + CategoryInfo          : NotSpecified: (FAIL execution:...thread owns it.:String) [], RemoteException
+Correction: keep one dedicated background Avalonia dispatcher thread for the complete console process; marshal UI checks to it and wait outside the UI thread.
+Retest: see execution.txt for the complete passing T01–T08 run and restart-readback.txt for the separate-process check.

@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Npgsql;
 
+if (args.FirstOrDefault() == "--lab5") return await Lab5.Run(args.Skip(1).ToArray());
 var adminString = Environment.GetEnvironmentVariable("EQUIPMENTBORROWING_TEST_CONNECTION");
 if (args.Length != 0 && (args.Length != 2 || args[0] != "--readback")) { Console.Error.WriteLine("Usage: no arguments, or --readback equipment_lab4_test_<32 hex digits>"); return 2; }
 if (string.IsNullOrWhiteSpace(adminString)) { Console.Error.WriteLine("Set EQUIPMENTBORROWING_TEST_CONNECTION to a disposable PostgreSQL admin connection with CREATEDB permission. See README."); return 2; }

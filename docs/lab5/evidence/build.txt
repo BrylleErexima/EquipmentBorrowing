@@ -1,0 +1,13 @@
+  EquipmentBorrowing.Contracts -> C:\Users\63907\source\repos\EquipmentBorrow\src\EquipmentBorrowing.Contracts\bin\Debug\net10.0\EquipmentBorrowing.Contracts.dll
+  EquipmentBorrowing.Domain -> C:\Users\63907\source\repos\EquipmentBorrow\src\EquipmentBorrowing.Domain\bin\Debug\net10.0\EquipmentBorrowing.Domain.dll
+  EquipmentBorrowing.Application -> C:\Users\63907\source\repos\EquipmentBorrow\src\EquipmentBorrowing.Application\bin\Debug\net10.0\EquipmentBorrowing.Application.dll
+  EquipmentBorrowing.Infrastructure -> C:\Users\63907\source\repos\EquipmentBorrow\src\EquipmentBorrowing.Infrastructure\bin\Debug\net10.0\EquipmentBorrowing.Infrastructure.dll
+  EquipmentBorrowing.Desktop -> C:\Users\63907\source\repos\EquipmentBorrow\src\EquipmentBorrowing.Desktop\bin\Debug\net10.0\EquipmentBorrowing.Desktop.dll
+  EquipmentBorrowing.Api -> C:\Users\63907\source\repos\EquipmentBorrow\src\EquipmentBorrowing.Api\bin\Debug\net10.0\EquipmentBorrowing.Api.dll
+  EquipmentBorrowing.Tests -> C:\Users\63907\source\repos\EquipmentBorrow\tests\EquipmentBorrowing.Tests\bin\Debug\net10.0\EquipmentBorrowing.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:11.72

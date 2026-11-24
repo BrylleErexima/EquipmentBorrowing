@@ -1,0 +1,134 @@
+﻿Database: equipment_lab4_test_2dc5799d62f843e4aa73dfbded4c995f
+PASS: A17 clean PostgreSQL migration
+PASS: A01/A02 seed catalog
+PASS: Reapplying migration does not repeat seed
+PASS: A12 register [Student saved.]
+PASS: A12 second student [Student saved.]
+PASS: A07 empty subject [Student saved.]
+PASS: A12 trimming and eligibility default
+PASS: A12 normalized duplicate [Student number already exists.]
+PASS: A12 normalized duplicate / fresh read unchanged
+PASS: A12 blank number [Student number is required.]
+PASS: A12 blank number / fresh read unchanged
+PASS: A12 blank name [Full name is required.]
+PASS: A12 blank name / fresh read unchanged
+PASS: A12 supplied whitespace-only contact [Contact information must be nonblank when supplied; omit it or use null.]
+PASS: A12 supplied whitespace-only contact / fresh read unchanged
+PASS: A15 register [Equipment saved.]
+PASS: A15 defaults and optional description
+PASS: A15 normalized duplicate [Equipment identifier already exists.]
+PASS: A15 normalized duplicate / fresh read unchanged
+PASS: A15 blank identifier [Equipment identifier is required.]
+PASS: A15 blank identifier / fresh read unchanged
+PASS: A15 blank name [Equipment name is required.]
+PASS: A15 blank name / fresh read unchanged
+PASS: A03 single checkout [Checkout saved: 1 item(s).]
+PASS: A03 unavailable readback
+PASS: A04 related identities
+PASS: A03 unavailable [EQ-001 is unavailable. Refresh your selection.]
+PASS: A03 unavailable / fresh read unchanged
+PASS: A03 missing student [Student was not found. Refresh and reselect.]
+PASS: A03 missing student / fresh read unchanged
+PASS: A03 missing item [Selected equipment was not found. Refresh and reselect.]
+PASS: A03 missing item / fresh read unchanged
+PASS: A03 invalid date [Expected return date must be later than today's checkout date (Asia/Manila).]
+PASS: A03 invalid date / fresh read unchanged
+PASS: A03 absent date [Expected return date must be later than today's checkout date (Asia/Manila).]
+PASS: A03 absent date / fresh read unchanged
+PASS: A13 edit [Student saved.]
+PASS: A13 clear contact and preserve history
+PASS: A13 stale edit [This record changed. Refresh and reselect before editing.]
+PASS: A13 stale edit / fresh read unchanged
+PASS: A13 duplicate edit [Student number already exists.]
+PASS: A13 duplicate edit / fresh read unchanged
+PASS: A13 invalid edit [Student number is required.]
+PASS: A13 invalid edit / fresh read unchanged
+PASS: A16 edit while on loan [Equipment saved.]
+PASS: A16 protected availability and history
+PASS: A16 duplicate edit [Equipment identifier already exists.]
+PASS: A16 duplicate edit / fresh read unchanged
+PASS: A16 invalid edit [Equipment identifier is required.]
+PASS: A16 invalid edit / fresh read unchanged
+PASS: A16 stale edit [This record changed. Refresh and reselect before editing.]
+PASS: A16 stale edit / fresh read unchanged
+PASS: A14 restrict active borrower [Student restricted. Existing loans remain returnable.]
+PASS: A14 repeated state [Student is already restricted.]
+PASS: A03/A14 restricted [Student is restricted from new borrowing.]
+PASS: A03/A14 restricted / fresh read unchanged
+PASS: A14 active loan retained
+PASS: A05 restricted student early return [Return saved. History retained.]
+PASS: A05 return date and availability readback
+PASS: A05 repeated return [This borrowing has already been returned.]
+PASS: A05 repeated return / fresh read unchanged
+PASS: A05 missing loan [Borrowing no longer exists. Refresh.]
+PASS: A05 missing loan / fresh read unchanged
+PASS: A14 permit [Student is now eligible.]
+PASS: A06 fewer than two [Select at least two distinct items.]
+PASS: A06 fewer than two / fresh read unchanged
+PASS: A06 duplicate items [Duplicate or invalid equipment selection.]
+PASS: A06 duplicate items / fresh read unchanged
+PASS: A06 missing item [Selected equipment was not found. Refresh and reselect.]
+PASS: A06 missing item / fresh read unchanged
+PASS: A06 invalid date [Expected return date must be later than today's checkout date (Asia/Manila).]
+PASS: A06 invalid date / fresh read unchanged
+PASS: A06 two-item checkout [Checkout saved: 2 item(s).]
+PASS: A06 both rows committed
+PASS: A06 unavailable plus available [EQ-002 is unavailable. Refresh your selection.]
+PASS: A06 unavailable plus available / fresh read unchanged
+PASS: A06 over limit [A student may have at most three active items.]
+PASS: A06 over limit / fresh read unchanged
+PASS: A03 exactly three active items [Checkout saved: 1 item(s).]
+PASS: A03 over limit [A student may have at most three active items.]
+PASS: A03 over limit / fresh read unchanged
+PASS: A06/A18 rollback after SQL write [Database write failed; this transaction was not committed. Check the connection, refresh and retry.]
+PASS: A06/A18 rollback after SQL write / fresh read unchanged
+PASS: A06 failure seam observed SQL writes before pre-commit exception
+PASS: A06 concurrent item checkout: exactly one winner
+PASS: A06 no duplicate active item
+PASS: A09 partial case-insensitive search edited student
+PASS: A09 partial case-insensitive search lab-101
+PASS: A09 partial case-insensitive search edited laptop
+PASS: A09 status All
+PASS: A09 status Active
+PASS: A09 status Returned
+PASS: A09 CheckoutDate descending=True / stable ID tie-breaker
+PASS: A09 CheckoutDate descending=False / stable ID tie-breaker
+PASS: A09 ExpectedReturnDate descending=True / stable ID tie-breaker
+PASS: A09 ExpectedReturnDate descending=False / stable ID tie-breaker
+PASS: A09 combined criteria
+PASS: A09 no matches
+PASS: A09 wildcard characters are literal search text
+PASS: A07 isolated student history
+PASS: A08 isolated equipment history
+PASS: A07/A08 empty histories
+PASS: A07/A08 missing differs from empty
+PASS: A07/A08 missing differs from empty
+PASS: A17 normalized student unique constraint
+PASS: A17 normalized equipment unique constraint
+PASS: A17 required nonblank check
+PASS: A17 enforced FK
+PASS: A17 partial unique active-item constraint
+PASS: A01/A02/A18 secret-free load failure
+PASS: A18 offline write no false success [Database write failed; this transaction was not committed. Check the connection, refresh and retry.]
+PASS: A18 recovered connection works
+PASS: A17 tab/newline identifier normalization matches Trim
+PASS: A17 whitespace-only name rejected
+PASS: A18 lost commit acknowledgement reports unknown, never false rollback
+PASS: A18 fresh read resolves committed outcome without retry
+PASS: A06 ineligible student [Student is restricted from new borrowing.]
+PASS: A06 ineligible student / fresh read unchanged
+PASS: A06 missing student [Student was not found. Refresh and reselect.]
+PASS: A06 missing student / fresh read unchanged
+PASS: A06 empty selection [Select at least two distinct items.]
+PASS: A06 empty selection / fresh read unchanged
+PASS: A06 limit fixture registration [Equipment saved.]
+PASS: A06 limit fixture registration [Equipment saved.]
+PASS: A06 limit fixture registration [Equipment saved.]
+PASS: A06 limit fixture registration [Equipment saved.]
+PASS: A06 one existing active item [Checkout saved: 1 item(s).]
+PASS: A06 coordinated checkout exactly at three-item limit [Checkout saved: 2 item(s).]
+PASS: A06 limit readback counts all requested items
+PASS: A06 prepare two active items for limit race [Return saved. History retained.]
+PASS: A06 concurrent different-item requests cannot exceed student limit
+PASS: A01-A16/A18 headless window / compiled XAML, all fourteen workflow command routes, history, empty/error states and unknown-outcome retry gate
+131 checks passed. NEW PROCESS: --readback equipment_lab4_test_2dc5799d62f843e4aa73dfbded4c995f

@@ -1,0 +1,31 @@
+﻿UTC 2026-11-24T06:12:00.7979401+00:00; local Asia/Manila date 2026-11-24; database equipment_lab5_test_407e654a8c2749d794e9b47cf04be4ad; .NET 10.0.11; OS Microsoft Windows NT 10.0.26300.0
+API listening http://127.0.0.1:57489/; no Avalonia process required.
+DB new process readback: {"students" : [{"Id":53,"Name":"Ada Cruz","StudentNumber":"ST-100","Contact":null,"CanBorrow":true,"Version":1,"NormalizedNumber":"st-100"}, 
+ {"Id":54,"Name":"Ben Diaz","StudentNumber":"ST-200","Contact":null,"CanBorrow":false,"Version":2,"NormalizedNumber":"st-200"}, 
+ {"Id":55,"Name":"Cara Lim","StudentNumber":"ST-300","Contact":null,"CanBorrow":true,"Version":1,"NormalizedNumber":"st-300"}, 
+ {"Id":56,"Name":"Dani Ong","StudentNumber":"ST-400","Contact":null,"CanBorrow":true,"Version":1,"NormalizedNumber":"st-400"}, 
+ {"Id":57,"Name":"UI Edited Student","StudentNumber":"UI-001","Contact":null,"CanBorrow":true,"Version":4,"NormalizedNumber":"ui-001"}, 
+ {"Id":58,"Name":"Acknowledgement lost","StudentNumber":"UNKNOWN-001","Contact":null,"CanBorrow":true,"Version":1,"NormalizedNumber":"unknown-001"}], "equipment" : [{"Id":91,"Identifier":"EQ-001","Name":"Camera","Description":null,"IsAvailable":false,"Version":2,"NormalizedIdentifier":"eq-001"}, 
+ {"Id":92,"Identifier":"EQ-002","Name":"Laptop","Description":null,"IsAvailable":true,"Version":1,"NormalizedIdentifier":"eq-002"}, 
+ {"Id":93,"Identifier":"EQ-003","Name":"Projector","Description":null,"IsAvailable":true,"Version":1,"NormalizedIdentifier":"eq-003"}, 
+ {"Id":94,"Identifier":"EQ-004","Name":"Tablet","Description":null,"IsAvailable":false,"Version":2,"NormalizedIdentifier":"eq-004"}, 
+ {"Id":95,"Identifier":"EQ-005","Name":"Microphone","Description":null,"IsAvailable":false,"Version":2,"NormalizedIdentifier":"eq-005"}, 
+ {"Id":96,"Identifier":"EQ-006","Name":"Tripod","Description":null,"IsAvailable":true,"Version":1,"NormalizedIdentifier":"eq-006"}, 
+ {"Id":97,"Identifier":"EQ-007","Name":"Independent HTTP edit","Description":null,"IsAvailable":true,"Version":2,"NormalizedIdentifier":"eq-007"}, 
+ {"Id":98,"Identifier":"UI-EQ-1","Name":"UI Edited Equipment","Description":null,"IsAvailable":false,"Version":5,"NormalizedIdentifier":"ui-eq-1"}, 
+ {"Id":99,"Identifier":"UI-EQ-2","Name":"UI Equipment 2","Description":null,"IsAvailable":false,"Version":2,"NormalizedIdentifier":"ui-eq-2"}], "borrowings" : [{"Id":59,"StudentId":53,"EquipmentId":91,"DateBorrowed":"2026-11-15","ExpectedReturnDate":"2026-11-23","ActualReturnDate":null}, 
+ {"Id":60,"StudentId":53,"EquipmentId":93,"DateBorrowed":"2026-11-16","ExpectedReturnDate":"2026-11-26","ActualReturnDate":"2026-11-22"}, 
+ {"Id":61,"StudentId":55,"EquipmentId":94,"DateBorrowed":"2026-11-17","ExpectedReturnDate":"2026-11-26","ActualReturnDate":null}, 
+ {"Id":62,"StudentId":55,"EquipmentId":95,"DateBorrowed":"2026-11-17","ExpectedReturnDate":"2026-11-26","ActualReturnDate":null}, 
+ {"Id":63,"StudentId":57,"EquipmentId":98,"DateBorrowed":"2026-11-24","ExpectedReturnDate":"2026-11-27","ActualReturnDate":"2026-11-24"}, 
+ {"Id":64,"StudentId":57,"EquipmentId":98,"DateBorrowed":"2026-11-24","ExpectedReturnDate":"2026-11-27","ActualReturnDate":null}, 
+ {"Id":65,"StudentId":57,"EquipmentId":99,"DateBorrowed":"2026-11-24","ExpectedReturnDate":"2026-11-27","ActualReturnDate":null}]}
+HTTP 2026-11-24T06:12:03.6952870+00:00 GET http://127.0.0.1:57489/api/v1/students?search=UI-001 
+RESPONSE 200 Location= [{"id":57,"studentNumber":"UI-001","fullName":"UI Edited Student","contact":null,"isEligible":true}]
+CHECK GET students?search=UI-001 expected 200, got 200
+CHECK T08 separate process retains UI student
+HTTP 2026-11-24T06:12:04.7588011+00:00 GET http://127.0.0.1:57489/api/v1/equipment 
+RESPONSE 200 Location= [{"id":91,"equipmentCode":"EQ-001","name":"Camera","description":null,"isAvailable":false},{"id":92,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true},{"id":93,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":94,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":95,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":96,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":97,"equipmentCode":"EQ-007","name":"Independent HTTP edit","description":null,"isAvailable":true},{"id":98,"equipmentCode":"UI-EQ-1","name":"UI Edited Equipment","description":null,"isAvailable":false},{"id":99,"equipmentCode":"UI-EQ-2","name":"UI Equipment 2","description":null,"isAvailable":false}]
+CHECK GET equipment expected 200, got 200
+CHECK T08 separate process retains independent edit
+PASS T08 new-process persistence readback

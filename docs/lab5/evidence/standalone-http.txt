@@ -1,0 +1,9 @@
+﻿Standalone API executable; desktop process not started.
+Disposable database: equipment_lab5_test_407e654a8c2749d794e9b47cf04be4ad
+UTC 2026-11-24T06:21:17.6077511+00:00
+GET http://127.0.0.1:5081/api/v1/equipment
+Status 200
+[{"id":91,"equipmentCode":"EQ-001","name":"Camera","description":null,"isAvailable":false},{"id":92,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true},{"id":93,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":94,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":95,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":96,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":97,"equipmentCode":"EQ-007","name":"Independent HTTP edit","description":null,"isAvailable":true},{"id":98,"equipmentCode":"UI-EQ-1","name":"UI Edited Equipment","description":null,"isAvailable":false},{"id":99,"equipmentCode":"UI-EQ-2","name":"UI Equipment 2","description":null,"isAvailable":false}]
+GET /openapi/v1.json
+Status 200
+OpenAPI matches committed file: True
