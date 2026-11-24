@@ -37,9 +37,9 @@ public sealed class PostgresWorkflowRepository(IDbContextFactory<EquipmentBorrow
             if (committing && !HasServerError(e))
                 throw new PersistenceException("Commit outcome is unknown. Do not resubmit. Reconnect and refresh records before deciding whether to retry.", true);
             if (e is DbUpdateConcurrencyException)
-                throw new PersistenceException("A record changed. Refresh and reselect before trying again.");
+                throw new PersistenceException("A record changed. Refresh and reselect before trying again.", statusCode: 409);
             if (e is PostgresException { SqlState: "23505" } || e.InnerException is PostgresException { SqlState: "23505" })
-                throw new PersistenceException("A duplicate identifier or active equipment borrowing conflicts with this request. Refresh and reselect.");
+                throw new PersistenceException("A duplicate identifier or active equipment borrowing conflicts with this request. Refresh and reselect.", statusCode: 409);
             throw new PersistenceException("Database write failed; this transaction was not committed. Check the connection, refresh and retry.");
         }
     }
@@ -53,7 +53,7 @@ public sealed class PostgresWorkflowRepository(IDbContextFactory<EquipmentBorrow
         public Task<List<Equipment>> EquipmentAsync() => db.Equipments.OrderBy(x => x.Identifier).ToListAsync();
         public Task<Student?> StudentAsync(int id) => db.Students.FirstOrDefaultAsync(x => x.Id == id);
         public Task<Equipment?> ItemAsync(int id) => db.Equipments.FirstOrDefaultAsync(x => x.Id == id);
-        public Task<Borrowing?> BorrowingAsync(int id) => db.Borrowings.FirstOrDefaultAsync(x => x.Id == id);
+        public Task<Borrowing?> BorrowingAsync(int id) => db.Borrowings.Include(x => x.Student).Include(x => x.Equipment).FirstOrDefaultAsync(x => x.Id == id);
         public Task<int> ActiveCountAsync(int studentId) => db.Borrowings.CountAsync(x => x.StudentId == studentId && x.ActualReturnDate == null);
         public Task<bool> HasActiveItemAsync(int id) => db.Borrowings.AnyAsync(x => x.EquipmentId == id && x.ActualReturnDate == null);
         public Task<bool> StudentNumberExistsAsync(string number, int? exceptId) => db.Students

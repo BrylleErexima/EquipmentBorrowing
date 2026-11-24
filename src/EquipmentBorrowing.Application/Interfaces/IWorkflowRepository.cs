@@ -24,10 +24,11 @@ public interface IWorkflowSession
 public enum StatusFilter { All, Active, Returned }
 public enum BorrowingSort { CheckoutDate, ExpectedReturnDate }
 public sealed record BorrowingQuery(string Search = "", StatusFilter Status = StatusFilter.All,
-    BorrowingSort Sort = BorrowingSort.CheckoutDate, bool Descending = true,
+    BorrowingSort Sort = BorrowingSort.CheckoutDate, bool Descending = false,
     int? StudentId = null, int? EquipmentId = null);
-public sealed class WorkflowException(string message) : Exception(message);
-public sealed class PersistenceException(string message, bool outcomeUnknown = false) : Exception(message)
+public sealed class WorkflowException(string message, int statusCode = 409) : Exception(message) { public int StatusCode { get; } = statusCode; }
+public sealed class PersistenceException(string message, bool outcomeUnknown = false, int statusCode = 500) : Exception(message)
 {
     public bool OutcomeUnknown { get; } = outcomeUnknown;
+    public int StatusCode { get; } = statusCode;
 }
